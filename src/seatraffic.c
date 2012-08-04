@@ -31,14 +31,15 @@ static ship_t ships[ship_kind_count] =
     { mil,    15,  0, "lib/ships/Frigate.obj", 0},						/* ~29   knots */
 };
 
-static XPLMWindowID windowId = NULL;
 static XPLMDataRef ref_plane_lat, ref_plane_lon, ref_night, ref_monotonic, ref_renopt;
 static int done_init=0, need_recalc=1;
 static tile_t current_tile={0,0};
 static int active_n=0;
 static int active_max=3*RENDERING_SCALE;
 static active_route_t *active_routes = NULL;
+
 #ifdef DO_ACTIVE_LIST
+static XPLMWindowID windowId = NULL;
 static XPLMDataRef ref_view_x, ref_view_y, ref_view_z, ref_view_h;
 #endif
 
@@ -403,7 +404,7 @@ int drawmap2d(XPLMDrawingPhase inPhase, int inIsBefore, void *inRefcon)
     
     return 1;
 }
-#endif
+#endif	/* DO_LOCAL_MAP */
 
 
 #ifdef DO_ACTIVE_LIST
@@ -452,8 +453,10 @@ static void drawdebug(XPLMWindowID inWindowID, void *inRefcon)
         }
         right=20+(int)width;	/* For next time */
 }
+#endif	/* DO_ACTIVE_LIST */
 
 
+#ifdef DEBUG
 void mybad(const char *inMessage)
 {
     assert(inMessage!=NULL);
@@ -503,8 +506,10 @@ PLUGIN_API int XPluginStart(char *outName, char *outSignature, char *outDescript
 
     if (!readroutes(outDescription)) { return failinit(outDescription); }	/* read routes.txt */
 
-#ifdef DO_ACTIVE_LIST
+#ifdef DEBUG
     XPLMSetErrorCallback(mybad);
+#endif
+#ifdef DO_ACTIVE_LIST
     ref_view_x   =XPLMFindDataRef("sim/graphics/view/view_x");
     ref_view_y   =XPLMFindDataRef("sim/graphics/view/view_y");
     ref_view_z   =XPLMFindDataRef("sim/graphics/view/view_z");
@@ -531,7 +536,9 @@ PLUGIN_API int XPluginStart(char *outName, char *outSignature, char *outDescript
 
 PLUGIN_API void XPluginStop(void)
 {
+#ifdef DO_ACTIVE_LIST
     if (windowId) { XPLMDestroyWindow(windowId); }
+#endif
 }
 
 PLUGIN_API void XPluginEnable(void)
