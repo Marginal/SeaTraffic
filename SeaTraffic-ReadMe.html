@@ -1,0 +1,110 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">
+  <meta content="Marine traffic plugin for X-Plane">
+  <meta content="X-Plane, simulator, scenery, marine, sea" name="keywords">
+  <title>SeaTraffic</title>
+  <meta content="Jonathan Harris" name="author">
+  <style type="text/css">
+.banner { font-family: Arial,Helvetica,sans-serif; background-color: lightskyblue; text-align: left; vertical-align: middle; height: 32px; }
+td { vertical-align: middle; }
+.dnl { font-family: Arial,Helvetica,sans-serif; font-size: small; background-color: lightskyblue; }
+samp { font-family: Arial,Helvetica,sans-serif; }
+h2 { font-family: Arial,Helvetica,sans-serif; }
+h3 { font-family: Arial,Helvetica,sans-serif; }
+h4 { font-family: Arial,Helvetica,sans-serif; }
+h5 { font-family: Arial,Helvetica,sans-serif; }
+  </style>
+</head>
+<body>
+<table style="width: 100%;" border="0" cellpadding="2">
+  <tbody>
+    <tr>
+      <td class="banner">Marginal&nbsp;&rarr; <a href="http://marginal.org.uk/x-planescenery/">X-Plane Scenery</a>&nbsp;&rarr; <a href="http://marginal.org.uk/x-planescenery/tools.html">Tools</a>&nbsp;&rarr; SeaTraffic</td>
+    </tr>
+  </tbody>
+</table>
+<hr>
+
+<h2>SeaTraffic plugin for X-Plane<small><sup>&reg;</sup></small></h2>
+
+<h3>Overview</h3>
+<p>This X-Plane plugin displays ships moving along real-life routes.</p>
+
+<h3>Requirements</h3>
+<p>This plugin can be used with X-Plane 9 or later. It relies on the <a target="_blank" href="http://www.opensceneryx.com/">OpenSceneryX</a> Object Library for its ship models.</p>
+
+<h3>Installation</h3>
+<ul>
+  <li>If you do not already have the OpenSceneryX Object Library installed, <a target="_blank" href="http://www.opensceneryx.com/">download</a> and install it.</li>
+<!--
+</ul>
+
+<h4>Installing using <a target="_blank" href="http://code.google.com/p/xaddonmanager/">XAddOnManager</a> (recommended)</h4>
+<ul>
+  <li>Run XAddOnManager.</li>
+  <li>Click on the the <samp>Plugins</samp> tab.</li>
+  <li>Press the <samp>Install&hellip;</samp> button.</li>
+  <li>Navigate to and select this <code>.zip</code> archive.</li>
+</ul>
+
+<h4>Installing by hand</h4>
+<ul>
+-->
+  <li>Copy or move the <code>SeaTraffic</code> folder from within this <code>.zip</code> archive into the <code>X-Plane/Resources/plugins</code> folder.</li>
+</ul>
+
+<hr>
+
+<h3>Adding / modifying routes</h3>
+<p>This plugin uses ferry routes extracted from the <a target="_blank" href="http://www.openstreetmap.org/">OpenStreetMap</a> project. If you find that a ferry route is missing or incorrect you can <a target="_blank" href="http://www.openstreetmap.org/user/new">sign up</a> to the project and add or modify the route. Start by reading the Beginners' guide and other info on the <a target="_blank" href="http://wiki.openstreetmap.org">Main Page</a>.</p>
+<p>The OpenStreetMap "way" tags for creating a ferry route are described <a target="_blank" href="http://wiki.openstreetmap.org/wiki/Tag:route%3Dferry">here</a> and <a target="_blank" href="http://wiki.openstreetmap.org/wiki/Proposed_features/ferry#cruise_ships.2C_cruise_ferries.2C_express_boats">here</a>. This plugin decides which type of ship to send along a ferry route based on the following tags:<p>
+<ul>
+  <li><tt><a target="_blank" href="http://wiki.openstreetmap.org/wiki/Tag:route%3Dferry">route</a> = ferry</tt></li>
+  <li><tt>name = <i>route name</i></tt></li>
+  <li><tt>ref = <i>line number or route code</i> </tt><small>(if applicable)</small></li>
+  <li><tt>foot = yes / no</tt></li>
+  <li><tt>motorcar = yes / no</tt></li>
+  <li><tt>hgv = yes / no</tt></li>
+</ul>
+<p>This plugin recognises tourist boat routes and cruise ship lines by the following additional tag:</p>
+<ul>
+  <li><tt><a target="_blank" href="http://wiki.openstreetmap.org/wiki/Proposed_features/ferry#cruise_ships.2C_cruise_ferries.2C_express_boats">ferry</a> = tourist / cruise</tt></li>
+</ul>
+
+<h4>Getting your new / modified route into X-Plane</h4>
+<p>This plugin doesn't read ferry routes directly from the OpenStreetMap servers (that would be too slow). Instead, it contains a pre-computed database of routes. In order to visualise your new or modified ferry route(s) in X-Plane you can either:</p>
+<ul>
+  <li>wait for the <a href="mailto:x-plane@marginal.org.uk">author</a> to release a new version of the plugin, or</li>
+  <li>wait about an hour for your edits to appear on the OpenStreetMap servers, then re-generate the plugin's database by running the script <code>X-Plane/Resources/plugins/SeaTraffic/buildroutes.py</code> <small>(Windows users must install <a href="http://www.python.org/ftp/python/2.7.3/python-2.7.3.msi">Python 2.x</a> in order to run this script)</small>.</li>
+</ul>
+
+<hr>
+
+<h3>License</h3>
+<p>This plugin is licensed under the Creative Commons <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/">Attribution-Noncommercial-ShareAlike</a> license. It uses map data &copy; <a href="http://www.openstreetmap.org/">OpenStreetMap</a> contributors, licensed under the Creative Commons <a rel="license" href="http://creativecommons.org/licenses/by/2.0/">Attribution-ShareAlike</a> license.</p>
+
+<hr>
+<table style="width: 100%;" border="0" cellspacing="0" cellpadding="2">
+  <tbody>
+    <tr>
+      <td class="banner">
+        Version 0.10 &copy; 2012 <a href="mailto:x-plane@marginal.org.uk">Jonathan Harris</a>
+        <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/"><img alt="Creative Commons License" style="border: none ; width: 88px; height: 31px; vertical-align: text-bottom;" src="http://i.creativecommons.org/l/by-nc-sa/3.0/88x31.png"></a>
+        </td>
+        <!--        <span style="float:right">
+          <a href="http://www.openstreetmap.org/"><img src="SeaTraffic/Osm_linkage.png" style="border: none;" /></a>
+          <a href="http://www.opensceneryx.com"><img src="SeaTraffic/enhancedby_opensceneryx_logo.png" alt="Enhanced by OpenSceneryX" style="border: none;" /></a>
+        </span> -->
+        <td class="banner" style="text-align: right">
+          <a href="http://www.openstreetmap.org/"><img src="SeaTraffic/Osm_linkage.png" style="border: none;" /></a>
+          <a href="http://www.opensceneryx.com"><img src="SeaTraffic/enhancedby_opensceneryx_logo.png" alt="Enhanced by OpenSceneryX" style="border: none;" /></a>
+        </td>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+</body>
+</html>
