@@ -1,0 +1,7 @@
+*.bak
+*.o
+*.obj
+*.ncb
+*.xpl
+*.csv
+*.osm

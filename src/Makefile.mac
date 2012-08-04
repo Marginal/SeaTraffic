@@ -1,0 +1,38 @@
+# -*-Makefile-*-
+
+include ../version.mak
+
+XPSDK=../../XPSDK201
+
+CC=gcc
+#BUILD=-g -DDEBUG -mmacosx-version-min=10.3.9 -framework OpenGL
+BUILD=-O2 -Wl,-x -DNDEBUG  -mmacosx-version-min=10.3.9
+DEFINES=-DAPL=1 -DIBM=0 -DLIN=0 -DVERSION=$(VERSION)
+INC=-I$(XPSDK)/CHeaders/XPLM -I$(XPSDK)/CHeaders/Widgets
+CFLAGS=-arch ppc -arch i586 -pipe -single_module -dynamiclib -flat_namespace -undefined warning -fshort-enums $(BUILD) $(DEFINES) $(INC)
+
+OBJS=routes.o seatraffic.o
+TARGET=../$(PROJECT)/mac.xpl
+LIBS=-framework OpenGL
+
+RM=rm -f
+CP=cp -p
+MD=mkdir -p
+
+all:	$(TARGET)
+
+install:	$(TARGET)
+	$(MD) ~/Desktop/X-Plane\ 9/Resources/plugins/$(PROJECT)
+	$(CP) $(TARGET) ~/Desktop/X-Plane\ 9/Resources/plugins/$(PROJECT)/
+	$(MD) ~/Desktop/X-Plane\ 10/Resources/plugins/$(PROJECT)
+	$(CP) $(TARGET) ~/Desktop/X-Plane\ 10/Resources/plugins/$(PROJECT)/
+
+$(TARGET):	$(OBJS)
+	$(CC) $(CFLAGS) $(LIBS) -o $@ $+
+
+seatraffic.o:	seatraffic.c seatraffic.h
+
+routes.o:	routes.c seatraffic.h
+
+clean:
+	$(RM) *~ *.bak *.o $(TARGET)

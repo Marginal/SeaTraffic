@@ -1,0 +1,38 @@
+# -*-Makefile-*- in NMAKE format
+
+!include ..\version.mak
+
+XPSDK=..\..\XPSDK201
+
+CC=cl
+#BUILD=-ZI -DDEBUG
+BUILD=-Ox -DNDEBUG
+DEFINES=-DIBM=1 -DAPL=0 -DLIN=0 -DVERSION=$(VERSION)
+INC=-I$(XPSDK)\CHeaders\XPLM -I$(XPSDK)/CHeaders/Widgets
+CFLAGS=-nologo -LD $(BUILD) $(DEFINES) $(INC)
+
+SRC=routes.c seatraffic.c
+TARGET=..\$(PROJECT)\win.xpl
+LIBS=$(XPSDK)\Libraries\Win\XPLM.lib $(XPSDK)\Libraries\Win\XPWidgets.lib GlU32.Lib OpenGL32.Lib
+
+RM=del /q
+CP=copy /y
+MD=mkdir
+
+default:	$(TARGET)
+
+install:	$(TARGET)
+	$(MD) "X:\Desktop\X-Plane 9\Resources\plugins\$(PROJECT)"
+	$(CP) $(TARGET) "X:\Desktop\X-Plane 9\Resources\plugins\$(PROJECT)\"
+	$(MD) "X:\Desktop\X-Plane 10\Resources\plugins\$(PROJECT)"
+	$(CP) $(TARGET) "X:\Desktop\X-Plane 10\Resources\plugins\$(PROJECT)\"
+
+$(TARGET):	$(SRC) Makefile.win
+	$(CC) $(CFLAGS) -Fe$@ -Fd$* $(SRC) $(LIBS)
+
+seatraffic.c:	seatraffic.h
+
+routes.c:	seatraffic.h
+
+clean:
+	$(RM) *~ *.bak *.exp *.idb *.ilk *.lib *.obj *.pdb *.xpl $(TARGET)
