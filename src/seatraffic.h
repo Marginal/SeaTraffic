@@ -52,9 +52,6 @@
 #ifdef DEBUG
 #  define DO_ACTIVE_LIST
 #  define DO_LOCAL_MAP
-#else
-#  undef DO_ACTIVE_LIST
-#  undef DO_LOCAL_MAP
 #endif
 
 /* types */
