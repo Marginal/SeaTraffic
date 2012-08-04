@@ -5,3 +5,5 @@
 *.idb
 *.pdb
 *.txt
+*.csv
+*.osm
