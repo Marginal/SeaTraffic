@@ -37,7 +37,10 @@ static tile_t current_tile={0,0};
 static int active_n=0;
 static int active_max=3*RENDERING_SCALE;
 static active_route_t *active_routes = NULL;
-
+#ifdef DO_LOCAL_MAP
+static int do_local_map=0;
+static XPLMMenuID my_menu_id;
+#endif
 #ifdef DO_ACTIVE_LIST
 static XPLMWindowID windowId = NULL;
 static XPLMDataRef ref_view_x, ref_view_y, ref_view_z, ref_view_h;
@@ -331,11 +334,23 @@ static int draw(XPLMDrawingPhase inPhase, int inIsBefore, void *inRefcon)
 
 
 #ifdef DO_LOCAL_MAP
+static void menuhandler(void *inMenuRef, void *inItemRef)
+{
+    if (inItemRef==0)
+    {
+        do_local_map=!do_local_map;
+        XPLMCheckMenuItem(my_menu_id, 0, do_local_map ? xplm_Menu_Checked : xplm_Menu_Unchecked);
+    }
+}
+
+
 /* Work out screen locations in local map */
 static int drawmap3d(XPLMDrawingPhase inPhase, int inIsBefore, void *inRefcon)
 {
     route_list_t *route_list;
     int i, j;
+
+    if (!do_local_map) { return 1; }
 
     if (active_n)
     {
@@ -391,6 +406,8 @@ static int drawmap2d(XPLMDrawingPhase inPhase, int inIsBefore, void *inRefcon)
     int width, height;
     active_route_t *a;
     float color[] = { 0, 0, 0.25 };
+
+    if (!do_local_map) { return 1; }
 
     XPGetElementDefaultDimensions(xpElement_CustomObject, &width, &height, NULL);
 
@@ -499,6 +516,8 @@ static void libraryenumerator(const char *inFilePath, void *inRef)
 
 PLUGIN_API int XPluginStart(char *outName, char *outSignature, char *outDescription)
 {
+    int my_menu_index;
+
     sprintf(outName, "SeaTraffic v%.2f", VERSION);
     strcpy(outSignature, "Marginal.SeaTraffic");
     strcpy(outDescription, "Shows animated marine traffic");
@@ -520,7 +539,14 @@ PLUGIN_API int XPluginStart(char *outName, char *outSignature, char *outDescript
     ref_night    =XPLMFindDataRef("sim/graphics/scenery/percent_lights_on");
     ref_monotonic=XPLMFindDataRef("sim/time/total_running_time_sec");
     ref_renopt   =XPLMFindDataRef("sim/private/reno/draw_objs_06");
-    if (!(ref_plane_lat && ref_plane_lon && ref_night && ref_monotonic))
+#ifdef DO_LOCAL_MAP
+    my_menu_index = XPLMAppendMenuItem(XPLMFindPluginsMenu(), "SeaTraffic", NULL, 1);
+    my_menu_id = XPLMCreateMenu("SeaTraffic", XPLMFindPluginsMenu(), my_menu_index, menuhandler, NULL);
+    XPLMAppendMenuItem(my_menu_id, "Display in Local Map", 0, 0);
+    XPLMCheckMenuItem(my_menu_id, 0, xplm_Menu_Unchecked);
+#endif
+
+if (!(ref_plane_lat && ref_plane_lon && ref_night && ref_monotonic))
     {
         strcpy(outDescription, "Can't access X-Plane datarefs!");
         return failinit(outDescription);

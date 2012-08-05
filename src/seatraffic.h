@@ -22,6 +22,7 @@
 #include "XPLMDataAccess.h"
 #include "XPLMDisplay.h"
 #include "XPLMGraphics.h"
+#include "XPLMMenus.h"
 #include "XPLMPlugin.h"
 #include "XPLMScenery.h"
 #include "XPUIGraphics.h"
@@ -49,9 +50,9 @@
 #define RADIUS 6378145.0	/* from sim/physics/earth_radius_m [m] */
 
 /* rendering options */
+#define DO_LOCAL_MAP
 #ifdef DEBUG
 #  define DO_ACTIVE_LIST
-#  define DO_LOCAL_MAP
 #endif
 
 /* types */
