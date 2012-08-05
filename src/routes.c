@@ -7,6 +7,10 @@
 
 #include "seatraffic.h"
 
+#if APL
+#  include <CoreFoundation/CFString.h>
+#  include <CoreFoundation/CFURL.h>
+#endif
 
 /* Globals */
 static route_list_t *routes[180][360];	/* array of link lists of routes by tile */
@@ -23,6 +27,21 @@ int readroutes(char *err)
     route_t *currentroute=NULL;
 
     XPLMGetPluginInfo(XPLMGetMyID(), NULL, buffer, NULL, NULL);
+#if APL
+    if (*buffer!='/')
+    {
+        /* X-Plane 9 - screw around with HFS paths FFS */
+        CFStringRef hfspath = CFStringCreateWithCString(NULL, buffer, kCFStringEncodingMacRoman);
+        CFURLRef url = CFURLCreateWithFileSystemPath(NULL, hfspath, kCFURLHFSPathStyle, 0);
+        CFStringRef posixpath = CFURLCopyFileSystemPath(url, kCFURLPOSIXPathStyle);
+        CFStringGetCString(posixpath, buffer, PATH_MAX, kCFStringEncodingUTF8);
+        CFRelease(hfspath);
+        CFRelease(url);
+        CFRelease(posixpath);
+    }
+#elif IBM
+    for (c=buffer; *c; c++) if (*c=='\\') *c='/';
+#endif
     if (!(c=strrchr(buffer,'/')))
     {
         strcpy(err, "Can't find routes.txt");
