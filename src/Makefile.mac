@@ -5,11 +5,11 @@ include ../version.mak
 XPSDK=../../XPSDK201
 
 CC=gcc
-#BUILD=-g -DDEBUG -mmacosx-version-min=10.3.9 -framework OpenGL
-BUILD=-O2 -Wl,-x -DNDEBUG  -mmacosx-version-min=10.3.9
+#BUILD=-g -DDEBUG
+BUILD=-O2 -Wl,-x -DNDEBUG
 DEFINES=-DAPL=1 -DIBM=0 -DLIN=0 -DVERSION=$(VERSION)
 INC=-I$(XPSDK)/CHeaders/XPLM -I$(XPSDK)/CHeaders/Widgets
-CFLAGS=-arch ppc -arch i586 -pipe -single_module -dynamiclib -flat_namespace -undefined warning -fshort-enums $(BUILD) $(DEFINES) $(INC)
+CFLAGS=-arch ppc -arch i586 -pipe -single_module -dynamiclib -flat_namespace -undefined warning -fshort-enums -mmacosx-version-min=10.3.9 $(BUILD) $(DEFINES) $(INC)
 
 OBJS=routes.o seatraffic.o
 TARGET=../$(PROJECT)/mac.xpl
