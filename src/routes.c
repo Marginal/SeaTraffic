@@ -16,7 +16,7 @@
 static route_list_t *routes[180][360];	/* array of link lists of routes by tile */
 
 /* prototypes */
-int addroutetotile(route_t *route);
+static int addroutetotile(route_t *route);
 
 
 int readroutes(char *err)
@@ -158,7 +158,7 @@ int readroutes(char *err)
 
 
 /* Add a route to the tile list */
-int addroutetotile(route_t *route)
+static int addroutetotile(route_t *route)
 {
     int i;
     for (i=0; i<route->pathlen; i++)

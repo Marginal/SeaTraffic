@@ -44,7 +44,7 @@ static XPLMDataRef ref_view_x, ref_view_y, ref_view_z, ref_view_h;
 #endif
 
 
-int inrange(tile_t tile, loc_t loc)
+static int inrange(tile_t tile, loc_t loc)
 {
     return ((abs(tile.south - (int) floor(loc.lat)) <= TILE_RANGE) &&
             (abs(tile.west  - (int) floor(loc.lon)) <= TILE_RANGE));
@@ -52,7 +52,7 @@ int inrange(tile_t tile, loc_t loc)
 
 
 /* Great circle distance, using Haversine formula. http://mathforum.org/library/drmath/view/51879.html */
-double distanceto(loc_t a, loc_t b)
+static double distanceto(loc_t a, loc_t b)
 {
     double slat=sin((b.lat-a.lat) * M_PI/360.0);
     double slon=sin((b.lon-a.lon) * M_PI/360.0);
@@ -62,7 +62,7 @@ double distanceto(loc_t a, loc_t b)
 
 
 /* Bearing of b from a [radians] http://mathforum.org/library/drmath/view/55417.html */
-double headingto(loc_t a, loc_t b)
+static double headingto(loc_t a, loc_t b)
 {
     double lat1=(a.lat * M_PI/180.0);
     double lon1=(a.lon * M_PI/180.0);
@@ -74,7 +74,7 @@ double headingto(loc_t a, loc_t b)
 
 
 /* Location distance d along heading h from a [degrees]. Assumes d < circumference/4. http://williams.best.vwh.net/avform.htm#LL */
-void displaced(loc_t a, double h, double d, dloc_t *b)
+static void displaced(loc_t a, double h, double d, dloc_t *b)
 {
     double lat1=(a.lat * M_PI/180.0);
     double lon1=(a.lon * M_PI/180.0);
@@ -87,7 +87,7 @@ void displaced(loc_t a, double h, double d, dloc_t *b)
 
 
 /* Adjust active routes */
-void recalc(void)
+static void recalc(void)
 {
     int active_i, i, j;
     int candidate_n=0;
@@ -198,7 +198,7 @@ void recalc(void)
 
 
 /* XPLMRegisterDrawCallback callback */
-int draw(XPLMDrawingPhase inPhase, int inIsBefore, void *inRefcon)
+static int draw(XPLMDrawingPhase inPhase, int inIsBefore, void *inRefcon)
 {
     static float next_hdg_update=0.0f;
 
@@ -332,7 +332,7 @@ int draw(XPLMDrawingPhase inPhase, int inIsBefore, void *inRefcon)
 
 #ifdef DO_LOCAL_MAP
 /* Work out screen locations in local map */
-int drawmap3d(XPLMDrawingPhase inPhase, int inIsBefore, void *inRefcon)
+static int drawmap3d(XPLMDrawingPhase inPhase, int inIsBefore, void *inRefcon)
 {
     route_list_t *route_list;
     int i, j;
@@ -386,7 +386,7 @@ int drawmap3d(XPLMDrawingPhase inPhase, int inIsBefore, void *inRefcon)
 
 
 /* Draw ship icons in local map */
-int drawmap2d(XPLMDrawingPhase inPhase, int inIsBefore, void *inRefcon)
+static int drawmap2d(XPLMDrawingPhase inPhase, int inIsBefore, void *inRefcon)
 {
     int width, height;
     active_route_t *a;
@@ -457,14 +457,14 @@ static void drawdebug(XPLMWindowID inWindowID, void *inRefcon)
 
 
 #ifdef DEBUG
-void mybad(const char *inMessage)
+static void mybad(const char *inMessage)
 {
     assert(inMessage!=NULL);
 }
 #endif
 
 
-int failinit(char *outDescription)
+static int failinit(char *outDescription)
 {
     XPLMDebugString("SeaTraffic: ");
     XPLMDebugString(outDescription);
@@ -474,7 +474,7 @@ int failinit(char *outDescription)
 
 
 /* Callback from XPLMLookupObjects to load ship objects */
-void libraryenumerator(const char *inFilePath, void *inRef)
+static void libraryenumerator(const char *inFilePath, void *inRef)
 {
     ship_t *ship=inRef;
     if ((ships->obj_n>=OBJ_VARIANT_MAX) || (ships->obj_n<0)) { return; }

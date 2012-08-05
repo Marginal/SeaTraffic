@@ -148,7 +148,3 @@ active_route_t *active_route_add(active_route_t **active_routes);
 active_route_t *active_route_get(active_route_t *active_routes, int n);
 active_route_t *active_route_get_byroute(active_route_t *active_routes, route_t *route);
 void active_route_pop(active_route_t **active_routes, int n);
-
-#ifdef DEBUG
-void mybad(const char *inMessage);
-#endif
