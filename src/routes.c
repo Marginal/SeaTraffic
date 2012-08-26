@@ -7,11 +7,6 @@
 
 #include "seatraffic.h"
 
-#if APL
-#  include <CoreFoundation/CFString.h>
-#  include <CoreFoundation/CFURL.h>
-#endif
-
 /* Globals */
 static route_list_t *routes[180][360];	/* array of link lists of routes by tile */
 
@@ -19,35 +14,15 @@ static route_list_t *routes[180][360];	/* array of link lists of routes by tile 
 static int addroutetotile(route_t *route);
 
 
-int readroutes(char *err)
+int readroutes(unsigned char *mypath, char *err)
 {
     unsigned char buffer[PATH_MAX], *c;
     FILE *h;
     int lineno=0;
     route_t *currentroute=NULL;
 
-    XPLMGetPluginInfo(XPLMGetMyID(), NULL, buffer, NULL, NULL);
-#if APL
-    if (*buffer!='/')
-    {
-        /* X-Plane 9 - screw around with HFS paths FFS */
-        CFStringRef hfspath = CFStringCreateWithCString(NULL, buffer, kCFStringEncodingMacRoman);
-        CFURLRef url = CFURLCreateWithFileSystemPath(NULL, hfspath, kCFURLHFSPathStyle, 0);
-        CFStringRef posixpath = CFURLCopyFileSystemPath(url, kCFURLPOSIXPathStyle);
-        CFStringGetCString(posixpath, buffer, PATH_MAX, kCFStringEncodingUTF8);
-        CFRelease(hfspath);
-        CFRelease(url);
-        CFRelease(posixpath);
-    }
-#elif IBM
-    for (c=buffer; *c; c++) if (*c=='\\') *c='/';
-#endif
-    if (!(c=strrchr(buffer,'/')))
-    {
-        strcpy(err, "Can't find routes.txt");
-        return 0;
-    }
-    strcpy(c+1, "routes.txt");
+    strcpy(buffer, mypath);
+    strcat(buffer, "routes.txt");
     if (!(h=fopen(buffer, "r")))
     {
         strcpy(err, "Can't open routes.txt");

@@ -8,6 +8,7 @@
 #ifdef _MSC_VER
 #  define _USE_MATH_DEFINES
 #  define _CRT_SECURE_NO_DEPRECATE
+#  define inline __inline
 #endif
 
 #include <assert.h>
@@ -17,6 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <sys/types.h>
 
 #define XPLM200	/* Requires X-Plane 9.0 or later */
 #include "XPLMDataAccess.h"
@@ -40,12 +42,15 @@
 #endif
 
 /* constants */
+#define DRAW_DISTANCE 20000.0	/* can see things a long way on water [m] */
+#define DRAW_REFLECT  16000.0
+#define DRAW_WAKE     12000.0
 #define RENDERING_MAX 6		/* max value of "number of objects" rendering option */
 #define RENDERING_SCALE 10	/* multiplied by number of objects setting to give maximum number of active routes */
 #define ACTIVE_MAX (RENDERING_MAX*RENDERING_SCALE)
 #define TILE_RANGE 1		/* How many tiles away from plane's tile to render boats */
 #define OBJ_VARIANT_MAX 8	/* How many physical objects to use for each virtual object in X-Plane's library */
-#define HDG_HOLD_TIME 300.0f	/* Don't update heading when approaching next node [s] */
+#define HDG_HOLD_TIME 10.0f	/* Only update headings and altitudes periodically [s] */
 #define LINGER_TIME 300.0f	/* How long should ships hang around at the dock at the end of their route [s] */
 #define RADIUS 6378145.0	/* from sim/physics/earth_radius_m [m] */
 
@@ -67,13 +72,17 @@ typedef enum	/* use -fshort-enums with gcc */
 /* Description of a ship */
 typedef struct
 {
-    ship_kind_t ship_kind;
     unsigned int speed;				/* [m/s] */
     float semilen;				/* [m] */
-    const char object[64];			/* Virtual .obj name */
     int obj_n;					/* Number of physical .objs */
     XPLMObjectRef object_ref[OBJ_VARIANT_MAX];	/* Physical .obj handles */
 } ship_t;
+
+typedef struct
+{
+    ship_kind_t ship_kind;
+    const unsigned char object[64];		/* Virtual .obj name */
+} ship_object_t;
 
 /* Geolocation, used for route paths */
 typedef struct
@@ -125,8 +134,11 @@ typedef struct active_route_t
     dloc_t loc;			/* Ship's current location */
     float altmsl;		/* Altitude */
     XPLMProbeRef ref_probe;	/* Terrain probe */
+    int is_drawn;		/* Whether to draw the ship */
     XPLMDrawInfo_t drawinfo;	/* Where to draw the ship */
+#ifdef DO_LOCAL_MAP
     int mapx, mapy;		/* position in local map */
+#endif
     struct active_route_t *next;
 } active_route_t;
 
@@ -136,7 +148,7 @@ const unsigned char *shiptokens[ship_kind_count];
 
 
 /* prototypes */
-int readroutes(char *err);
+int readroutes(unsigned char *mypath, char *err);
 route_list_t *getroutesbytile(int south, int west);
 
 int route_list_add(route_list_t **route_list, route_t *route);
