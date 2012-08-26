@@ -5,11 +5,11 @@ include ../version.mak
 XPSDK=../../XPSDK201
 
 CC=gcc
-#BUILD=-g -O -DDEBUG
-BUILD=-Os -s -DNDEBUG
+#BUILD=-g -DDEBUG
+BUILD=-O3 -s -Wl,-x -DNDEBUG
 DEFINES=-DAPL=0 -DIBM=0 -DLIN=1 -DVERSION=$(VERSION)
 INC=-I$(XPSDK)/CHeaders/XPLM -I$(XPSDK)/CHeaders/Widgets
-CFLAGS=-shared $(BUILD) $(DEFINES) $(INC)
+CFLAGS=-shared -fvisibility=hidden -fshort-enums $(BUILD) $(DEFINES) $(INC)
 
 OBJS=routes.o seatraffic.o
 TARGET=../$(PROJECT)/lin.xpl
