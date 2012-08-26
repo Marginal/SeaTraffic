@@ -59,8 +59,8 @@ from xml.parsers.expat import ParserCreate
 # http://wiki.openstreetmap.org/wiki/Xapi
 #server='http://jxapi.openstreetmap.org/xapi/api/0.6/'	- down
 #server='http://open.mapquestapi.com/xapi/api/0.6/'	- no good
-#server='http://www.overpass-api.de/api/xapi?'
-server='http://overpass.osm.rambler.ru/cgi/xapi?'
+server='http://www.overpass-api.de/api/xapi?'
+#server='http://overpass.osm.rambler.ru/cgi/xapi?'
 
 radius=6378145	# from sim/physics/earth_radius_m
 
