@@ -21,7 +21,7 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD ul_reason, LPVOID lpReserved)
 /* Globals */
 static unsigned char mypath[PATH_MAX], *relpath;
 
-const unsigned char *shiptokens[ship_kind_count] = { "", "tourist", "foot", "car", "hgv", "cruise", "leisure", "cargo", "tanker", "mil" };	/* order must match ship_kind_t enum */
+const unsigned char *shiptokens[ship_kind_count] = { "", "tourist", "foot", "car", "hgv", "cruise", "leisure", "cargo", "tanker" };	/* order must match ship_kind_t enum */
 
 static ship_t ships[ship_kind_count] =
 {
@@ -35,7 +35,6 @@ static ship_t ships[ship_kind_count] =
     {  2,  8 },	/* leisure,  ~4   knots */
     { 10, 95 },	/* cargo,   ~19.5 knots */
     { 10, 95 },	/* tanker,  ~19.5 knots */
-    { 15,  0 },	/* mil,     ~29   knots */
 };
 
 static ship_object_t ship_objects[] =
@@ -51,7 +50,6 @@ static ship_object_t ship_objects[] =
     { leisure,	"opensceneryx/objects/vehicles/boats_ships/power.obj" },
     { cargo,	"opensceneryx/objects/vehicles/boats_ships/container.obj" },
     { tanker,	"opensceneryx/objects/vehicles/boats_ships/vehicle_carriers.obj" },
-    { mil,	"lib/ships/Frigate.obj" },
 };
 
 static XPLMDataRef ref_view_x, ref_view_y, ref_view_z, ref_view_h;
