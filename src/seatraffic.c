@@ -631,7 +631,7 @@ static void drawdebug(XPLMWindowID inWindowID, void *inRefcon)
 
 static void menuhandler(void *inMenuRef, void *inItemRef)
 {
-    switch ((int) inItemRef)
+    switch ((intptr_t) inItemRef)
     {
     case 0:
         do_reflections=!do_reflections;
@@ -721,6 +721,7 @@ static void posixify(unsigned char *path)
     if (*path!='/')
     {
         /* X-Plane 9 - screw around with HFS paths FFS */
+        int isfolder = (path[strlen(path)-1]==':');
         CFStringRef hfspath = CFStringCreateWithCString(NULL, path, kCFStringEncodingMacRoman);
         CFURLRef url = CFURLCreateWithFileSystemPath(NULL, hfspath, kCFURLHFSPathStyle, 0);
         CFStringRef posixpath = CFURLCopyFileSystemPath(url, kCFURLPOSIXPathStyle);
@@ -728,6 +729,7 @@ static void posixify(unsigned char *path)
         CFRelease(hfspath);
         CFRelease(url);
         CFRelease(posixpath);
+        if (isfolder && path[strlen(path)-1]!='/') { strcat(path, "/"); }	/* converting from HFS loses trailing separator */
     }
 #elif IBM
     unsigned char *c;
@@ -768,9 +770,6 @@ PLUGIN_API int XPluginStart(char *outName, char *outSignature, char *outDescript
     posixify(buffer);
     assert (!(strncmp(mypath, buffer, strlen(buffer))));
     relpath=mypath+strlen(buffer);			/* resource path, relative to X-Plane system folder */
-#if APL
-    if (*relpath=='/') { relpath++; }			/* converting system path from HFS to posix loses trailing '/' */
-#endif
 
     strcpy(buffer, relpath);
     strcat(buffer, "wake_big.obj");

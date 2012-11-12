@@ -2,7 +2,17 @@
 
 !include ..\version.mak
 
-XPSDK=..\..\XPSDK201
+!if "$(CPU)" == "x86"
+ARCHDIR=
+ARCHXP=
+!elseif "$(CPU)" == "amd64"
+ARCHDIR=64
+ARCHXP=_64
+!else
+! error CPU should be defined as x86 or amd64
+!endif
+
+XPSDK=..\..\XPSDK211
 
 CC=cl
 #BUILD=-ZI -DDEBUG
@@ -12,22 +22,24 @@ INC=-I$(XPSDK)\CHeaders\XPLM -I$(XPSDK)/CHeaders/Widgets
 CFLAGS=-nologo -LD $(BUILD) $(DEFINES) $(INC)
 
 SRC=routes.c seatraffic.c
-TARGET=..\$(PROJECT)\win.xpl
-LIBS=$(XPSDK)\Libraries\Win\XPLM.lib $(XPSDK)\Libraries\Win\XPWidgets.lib GlU32.Lib OpenGL32.Lib
+TARGET=..\$(PROJECT)\$(ARCHDIR)\win.xpl
+LIBS=$(XPSDK)\Libraries\Win\XPLM$(ARCHXP).lib $(XPSDK)\Libraries\Win\XPWidgets$(ARCHXP).lib GlU32.Lib OpenGL32.Lib
 
 RM=del /q
 CP=copy /y
 MD=mkdir
 
-default:	$(TARGET)
+all:	$(TARGET)
 
 install:	$(TARGET)
-	$(MD) "X:\Desktop\X-Plane 9\Resources\plugins\$(PROJECT)" || echo.
-	$(CP) $(TARGET) "X:\Desktop\X-Plane 9\Resources\plugins\$(PROJECT)\"
-	$(MD) "X:\Desktop\X-Plane 10\Resources\plugins\$(PROJECT)" || echo.
-	$(CP) $(TARGET) "X:\Desktop\X-Plane 10\Resources\plugins\$(PROJECT)\"
+!if "$(CPU)" == "x86"
+	$(MD) "X:\Desktop\X-Plane 9\Resources\plugins\$(PROJECT)\$(ARCHDIR)" || echo.
+	$(CP) $(TARGET) "X:\Desktop\X-Plane 9\Resources\plugins\$(PROJECT)\$(ARCHDIR)\"
+!endif
+	$(MD) "X:\Desktop\X-Plane 10\Resources\plugins\$(PROJECT)\$(ARCHDIR)" || echo.
+	$(CP) $(TARGET) "X:\Desktop\X-Plane 10\Resources\plugins\$(PROJECT)\$(ARCHDIR)\"
 
-$(TARGET):	$(SRC) Makefile.win
+$(TARGET):	clean $(SRC) Makefile.win
 	$(CC) $(CFLAGS) -Fe$@ -Fd$* $(SRC) $(LIBS)
 
 seatraffic.c:	seatraffic.h

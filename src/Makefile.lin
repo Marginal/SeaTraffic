@@ -2,33 +2,45 @@
 
 include ../version.mak
 
-XPSDK=../../XPSDK201
+ifeq ($(shell arch), i686)
+ARCHDIR=
+else ifeq ($(shell arch), x86_64)
+ARCHDIR=64
+else
+$(error unknown architecture $(shell arch))
+endif
+
+XPSDK=../../XPSDK211
 
 CC=gcc
 #BUILD=-g -DDEBUG
-BUILD=-O3 -s -Wl,-x -DNDEBUG
+#LDFLAGS=
+BUILD=-O3 -s -DNDEBUG
+LDFLAGS=-Wl,-x
 DEFINES=-DAPL=0 -DIBM=0 -DLIN=1 -DVERSION=$(VERSION)
 INC=-I$(XPSDK)/CHeaders/XPLM -I$(XPSDK)/CHeaders/Widgets
-CFLAGS=-shared -fvisibility=hidden -fshort-enums $(BUILD) $(DEFINES) $(INC)
+CFLAGS=-shared -fPIC -fvisibility=hidden -fshort-enums $(BUILD) $(DEFINES) $(INC)
 
 OBJS=routes.o seatraffic.o
-TARGET=../$(PROJECT)/lin.xpl
+TARGET=../$(PROJECT)/$(ARCHDIR)/lin.xpl
 LIBS=-lGLU -lGL
 
 RM=rm -f
-CP=cp
+CP=cp -p
 MD=mkdir -p
 
 all:	$(TARGET)
 
 install:	$(TARGET)
-	$(MD) /media/jonathan/Desktop/X-Plane\ 9/Resources/plugins/$(PROJECT)
-	$(CP) $(TARGET) /media/jonathan/Desktop/X-Plane\ 9/Resources/plugins/$(PROJECT)/
-	$(MD) /media/jonathan/Desktop/X-Plane\ 10/Resources/plugins/$(PROJECT)
-	$(CP) $(TARGET) /media/jonathan/Desktop/X-Plane\ 10/Resources/plugins/$(PROJECT)/
+ifeq ($(shell arch), i686)
+	$(MD) /media/jonathan/Desktop/X-Plane\ 9/Resources/plugins/$(PROJECT)/$(ARCHDIR)
+	$(CP) $(TARGET) /media/jonathan/Desktop/X-Plane\ 9/Resources/plugins/$(PROJECT)/$(ARCHDIR)/
+endif
+	$(MD) /media/jonathan/Desktop/X-Plane\ 10/Resources/plugins/$(PROJECT)/$(ARCHDIR)
+	$(CP) $(TARGET) /media/jonathan/Desktop/X-Plane\ 10/Resources/plugins/$(PROJECT)/$(ARCHDIR)/
 
 $(TARGET):	$(OBJS)
-	$(CC) $(CFLAGS) $(LIBS) -o $@ $+
+	$(CC) $(CFLAGS) $(LDFLAGS) $(LIBS) -o $@ $+
 
 seatraffic.o:	seatraffic.c seatraffic.h
 

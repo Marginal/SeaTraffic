@@ -2,14 +2,16 @@
 
 include ../version.mak
 
-XPSDK=../../XPSDK201
+XPSDK=../../XPSDK211
 
 CC=gcc
 #BUILD=-g -DDEBUG
-BUILD=-O3 -Wl,-x -DNDEBUG
+#LDFLAGS=
+BUILD=-O3 -DNDEBUG
+LDFLAGS=-Wl,-x
 DEFINES=-DAPL=1 -DIBM=0 -DLIN=0 -DVERSION=$(VERSION)
 INC=-I$(XPSDK)/CHeaders/XPLM -I$(XPSDK)/CHeaders/Widgets
-CFLAGS=-arch ppc -arch i586 -pipe -single_module -dynamiclib -flat_namespace -undefined warning -fvisibility=hidden -fshort-enums -mmacosx-version-min=10.4 $(BUILD) $(DEFINES) $(INC)
+CFLAGS=-arch ppc -arch i586 -arch x86_64 -pipe -single_module -dynamiclib -flat_namespace -undefined warning -fvisibility=hidden -fshort-enums -mmacosx-version-min=10.4 $(BUILD) $(DEFINES) $(INC)
 
 OBJS=routes.o seatraffic.o
 TARGET=../$(PROJECT)/mac.xpl
@@ -28,7 +30,7 @@ install:	$(TARGET)
 	$(CP) $(TARGET) ~/Desktop/X-Plane\ 10/Resources/plugins/$(PROJECT)/
 
 $(TARGET):	$(OBJS)
-	$(CC) $(CFLAGS) $(LIBS) -o $@ $+
+	$(CC) $(CFLAGS) $(LDFLAGS) $(LIBS) -o $@ $+
 
 seatraffic.o:	seatraffic.c seatraffic.h
 
