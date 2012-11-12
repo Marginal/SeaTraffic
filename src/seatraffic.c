@@ -17,7 +17,6 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD ul_reason, LPVOID lpReserved)
 #endif
 
 
-
 /* Globals */
 static unsigned char mypath[PATH_MAX], *relpath;
 
@@ -30,11 +29,11 @@ static ship_t ships[ship_kind_count] =
     {  3, 15 },	/* tourist,  ~6   knots */
     { 16, 21 },	/* foot,    ~31   knots */
     { 11, 76 },	/* car,     ~21.5 knots */
-    { 11, 76 },	/* hgv,     ~21.5 knots */
-    { 11, 80 },	/* cruise,  ~21   knots */
+    { 10, 76 },	/* hgv,     ~19.5 knots */
+    { 12, 80 },	/* cruise,  ~23.5 knots */
     {  2,  8 },	/* leisure,  ~4   knots */
-    { 10, 95 },	/* cargo,   ~19.5 knots */
-    { 10, 95 },	/* tanker,  ~19.5 knots */
+    {  8, 95 },	/* cargo,   ~15.5 knots */
+    {  8,125 },	/* tanker,  ~15.5 knots */
 };
 
 static ship_object_t ship_objects[] =
@@ -49,7 +48,10 @@ static ship_object_t ship_objects[] =
     { cruise,	"opensceneryx/objects/vehicles/boats_ships/cruise.obj" },
     { leisure,	"opensceneryx/objects/vehicles/boats_ships/power.obj" },
     { cargo,	"opensceneryx/objects/vehicles/boats_ships/container.obj" },
-    { tanker,	"opensceneryx/objects/vehicles/boats_ships/vehicle_carriers.obj" },
+    { tanker,	"Aframax_tanker_Black.obj" },
+    { tanker,	"Aframax_tanker_Blue.obj" },
+    { tanker,	"Aframax_tanker_Grey.obj" },
+    { tanker,	"Aframax_tanker_Sky.obj" },
 };
 
 static XPLMDataRef ref_view_x, ref_view_y, ref_view_z, ref_view_h;
@@ -60,10 +62,10 @@ static tile_t current_tile={0,0};
 static int active_n=0;
 static int active_max=3*RENDERING_SCALE;
 static active_route_t *active_routes = NULL;
+static XPLMMenuID my_menu_id;
 static int do_reflections=1;
 #ifdef DO_LOCAL_MAP
 static int do_local_map=0;
-static XPLMMenuID my_menu_id;
 #endif
 #ifdef DO_ACTIVE_LIST
 static XPLMWindowID windowId = NULL;
