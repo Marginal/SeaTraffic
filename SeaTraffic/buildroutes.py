@@ -331,7 +331,7 @@ print("%d OSM Ways, of which %d were merged, %d rejected forks, %d too small.\nR
 
 
 h=codecs.open('routes.txt', 'wt', 'utf-8')
-h.write(u'\uFEFF# OSM export %s\n# Map data \u00A9 OpenStreetMap contributors - http://www.openstreetmap.org/, CC-BY-SA - http://creativecommons.org/licenses/by-sa/2.0/\n\n' % datadate)	# start with BOM to signify this is utf-8
+h.write(u'\uFEFF# OSM export %s\n# Map data \u00A9 OpenStreetMap contributors - http://www.openstreetmap.org/, licensed under ODbL - http://opendatacommons.org/licenses/odbl/\n\n' % datadate)	# start with BOM to signify this is utf-8
 for way in sortedways:
     if way.cruise is True:
         ferrytype='cruise'
