@@ -16,7 +16,7 @@ XPSDK=..\..\XPSDK211
 
 CC=cl
 #BUILD=-ZI -DDEBUG
-BUILD=-Ox -DNDEBUG
+BUILD=-Ox -GF -DNDEBUG
 DEFINES=-DIBM=1 -DAPL=0 -DLIN=0 -DVERSION=$(VERSION)
 INC=-I$(XPSDK)\CHeaders\XPLM -I$(XPSDK)/CHeaders/Widgets
 CFLAGS=-nologo -LD $(BUILD) $(DEFINES) $(INC)
@@ -33,18 +33,17 @@ all:	$(TARGET)
 
 install:	$(TARGET)
 !if "$(CPU)" == "x86"
-	$(MD) "X:\Desktop\X-Plane 9\Resources\plugins\$(PROJECT)\$(ARCHDIR)" || echo.
+	-$(MD) "X:\Desktop\X-Plane 9\Resources\plugins\$(PROJECT)\$(ARCHDIR)"
 	$(CP) $(TARGET) "X:\Desktop\X-Plane 9\Resources\plugins\$(PROJECT)\$(ARCHDIR)\"
 !endif
-	$(MD) "X:\Desktop\X-Plane 10\Resources\plugins\$(PROJECT)\$(ARCHDIR)" || echo.
+	-$(MD) "X:\Desktop\X-Plane 10\Resources\plugins\$(PROJECT)\$(ARCHDIR)"
 	$(CP) $(TARGET) "X:\Desktop\X-Plane 10\Resources\plugins\$(PROJECT)\$(ARCHDIR)\"
 
-$(TARGET):	clean $(SRC) Makefile.win
+$(TARGET):	clean $(SRC)
 	$(CC) $(CFLAGS) -Fe$@ -Fd$* $(SRC) $(LIBS)
 
-seatraffic.c:	seatraffic.h
-
-routes.c:	seatraffic.h
-
 clean:
-	$(RM) *~ *.bak *.exp *.idb *.ilk *.lib *.obj *.pdb *.xpl $(TARGET)
+	-$(RM) *~ *.bak *.obj $(TARGET:.xpl=).*
+
+seatraffic.c:	seatraffic.h
+routes.c:	seatraffic.h

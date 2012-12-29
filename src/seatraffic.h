@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <time.h>
 #include <sys/types.h>
 
@@ -27,6 +28,7 @@
 #include "XPLMMenus.h"
 #include "XPLMPlugin.h"
 #include "XPLMScenery.h"
+#include "XPLMUtilities.h"
 #include "XPUIGraphics.h"
 
 #if APL
@@ -39,6 +41,12 @@
 
 #ifdef _MSC_VER
 #  define PATH_MAX MAX_PATH
+#endif
+
+/* Version of assert that suppresses "variable ... set but not used" if the variable only exists for the purpose of the asserted expression */
+#ifdef	NDEBUG
+#  undef assert
+#  define assert(expr)	((void)(expr))
 #endif
 
 /* constants */
@@ -81,7 +89,7 @@ typedef struct
 typedef struct
 {
     ship_kind_t ship_kind;
-    const unsigned char object[64];		/* Virtual .obj name */
+    const char object[64];		/* Virtual .obj name */
 } ship_object_t;
 
 /* Geolocation, used for route paths */
@@ -144,11 +152,11 @@ typedef struct active_route_t
 
 
 /* globals */
-const unsigned char *shiptokens[ship_kind_count];
+const char *shiptokens[ship_kind_count];
 
 
 /* prototypes */
-int readroutes(unsigned char *mypath, char *err);
+int readroutes(char *mypath, char *err);
 route_list_t *getroutesbytile(int south, int west);
 
 int route_list_add(route_list_t **route_list, route_t *route);

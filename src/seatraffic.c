@@ -18,9 +18,9 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD ul_reason, LPVOID lpReserved)
 
 
 /* Globals */
-static unsigned char mypath[PATH_MAX], *relpath;
+static char mypath[PATH_MAX], *relpath;
 
-const unsigned char *shiptokens[ship_kind_count] = { "", "tourist", "foot", "car", "hgv", "cruise", "leisure", "cargo", "tanker" };	/* order must match ship_kind_t enum */
+const char *shiptokens[ship_kind_count] = { "", "tourist", "foot", "car", "hgv", "cruise", "leisure", "cargo", "tanker" };	/* order must match ship_kind_t enum */
 
 static ship_t ships[ship_kind_count] =
 {
@@ -36,7 +36,7 @@ static ship_t ships[ship_kind_count] =
     {  8,125 },	/* tanker,  ~15.5 knots */
 };
 
-static ship_object_t ship_objects[] =
+static const ship_object_t ship_objects[] =
 {
     { tourist,	"opensceneryx/objects/vehicles/boats_ships/tour.obj" },
     { foot,	"Damen_4212_Blue.obj" },
@@ -446,7 +446,7 @@ static int drawships(XPLMDrawingPhase inPhase, int inIsBefore, void *inRefcon)
         drawtime = (t2.tv_sec-t1.tv_sec) * 1000000 + t2.tv_usec - t1.tv_usec;	/* reflections are drawn before normal */
 #endif
         break;
-    /* case 3:	/* X-Plane 10 - complex reflections? */
+    // case 3:	/* X-Plane 10 - complex reflections? */
     }
 
     return 1;
@@ -473,7 +473,7 @@ static int drawwakes(XPLMDrawingPhase inPhase, int inIsBefore, void *inRefcon)
     view_x=XPLMGetDataf(ref_view_x);
     view_z=XPLMGetDataf(ref_view_z);
     a=active_routes;
-    /* XPLMSetGraphicsState(1, 1, 1,   1, 1,   0, 0);		/* No depth test/write  - doesn't work with XPLMDrawObjects */
+    // XPLMSetGraphicsState(1, 1, 1,   1, 1,   0, 0);		/* No depth test/write  - doesn't work with XPLMDrawObjects */
     glEnable(GL_POLYGON_OFFSET_FILL);				/* Do this instead - Yuk! */
     glPolygonOffset(-2,-2);
     while (a)
@@ -683,7 +683,7 @@ static int failinit(char *outDescription)
 }
 
 
-static XPLMObjectRef loadobject(const unsigned char *path)
+static XPLMObjectRef loadobject(const char *path)
 {
     XPLMObjectRef ref=XPLMLoadObject(path);
     if (ref==NULL)
@@ -715,7 +715,7 @@ static void libraryenumerator(const char *inFilePath, void *inRef)
 
 
 /* Convert path to posix style in-place */
-static void posixify(unsigned char *path)
+static void posixify(char *path)
 {
 #if APL
     if (*path!='/')
@@ -732,7 +732,7 @@ static void posixify(unsigned char *path)
         if (isfolder && path[strlen(path)-1]!='/') { strcat(path, "/"); }	/* converting from HFS loses trailing separator */
     }
 #elif IBM
-    unsigned char *c;
+    char *c;
     for (c=path; *c; c++) if (*c=='\\') *c='/';
 #endif
 }
@@ -740,11 +740,11 @@ static void posixify(unsigned char *path)
 
 /**********************************************************************
  Plugin entry points
-/**********************************************************************/
+ **********************************************************************/
 
 PLUGIN_API int XPluginStart(char *outName, char *outSignature, char *outDescription)
 {
-    unsigned char buffer[PATH_MAX], *c;
+    char buffer[PATH_MAX], *c;
 
     sprintf(outName, "SeaTraffic v%.2f", VERSION);
     strcpy(outSignature, "Marginal.SeaTraffic");
@@ -831,12 +831,12 @@ PLUGIN_API void XPluginReceiveMessage(XPLMPluginID inFrom, long inMessage, void 
             for (i=0; i<sizeof(ship_objects)/sizeof(ship_object_t); i++)
             {
                 ship_kind_t ship_kind=ship_objects[i].ship_kind;
-                const unsigned char *object=ship_objects[i].object;
+                const char *object=ship_objects[i].object;
                 ship_t *ship=&ships[ship_kind];
                 if (!strchr(object, '/'))
                 {
                     /* Local resource */
-                    unsigned char buffer[PATH_MAX];
+                    char buffer[PATH_MAX];
                     strcpy(buffer, relpath);
                     strcat(buffer, object);
                     ship->object_ref[ship->obj_n]=loadobject(buffer);

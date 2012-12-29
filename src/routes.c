@@ -14,9 +14,9 @@ static route_list_t *routes[180][360];	/* array of link lists of routes by tile 
 static int addroutetotile(route_t *route);
 
 
-int readroutes(unsigned char *mypath, char *err)
+int readroutes(char *mypath, char *err)
 {
-    unsigned char buffer[PATH_MAX], *c;
+    char buffer[PATH_MAX], *c;
     FILE *h;
     int lineno=0;
     route_t *currentroute=NULL;
@@ -79,7 +79,7 @@ int readroutes(unsigned char *mypath, char *err)
         else				/* New route */
         {
             int i;
-            unsigned char *name=c;
+            char *name=c;
             while ((*name) && !isspace(*name)) { name++; }	/* split line into shiptype and name */
             while ((*name) && isspace(*name)) { *(name++)=0; }	/* split line into shiptype and name */
             if (!(currentroute=calloc(1, sizeof(route_t))))
@@ -161,7 +161,7 @@ route_list_t *getroutesbytile(int south, int west)
 
 /**********************************************************************
  Linked list manipulation
-/**********************************************************************/
+ **********************************************************************/
 
 /* Adds to front of list */
 int route_list_add(route_list_t **route_list, route_t *route)
@@ -245,7 +245,7 @@ active_route_t *active_route_get(active_route_t *active_routes, int n)
     while (n--)
     {
         active_routes=active_routes->next;
-        /* assert(active_routes!=NULL);	/* Allow function to return NULL for item just past length */
+        // assert(active_routes!=NULL);	/* Allow function to return NULL for item just past length */
     }
     return active_routes;
 }
