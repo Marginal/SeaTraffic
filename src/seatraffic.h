@@ -22,19 +22,27 @@
 #include <sys/types.h>
 
 #define XPLM200	/* Requires X-Plane 9.0 or later */
-#include "XPLMDataAccess.h"
-#include "XPLMDisplay.h"
-#include "XPLMGraphics.h"
-#include "XPLMMenus.h"
-#include "XPLMPlugin.h"
-#include "XPLMScenery.h"
-#include "XPLMUtilities.h"
-#include "XPUIGraphics.h"
 
 #if APL
+#  include "XPLM/XPLMDataAccess.h"
+#  include "XPLM/XPLMDisplay.h"
+#  include "XPLM/XPLMGraphics.h"
+#  include "XPLM/XPLMMenus.h"
+#  include "XPLM/XPLMPlugin.h"
+#  include "XPLM/XPLMScenery.h"
+#  include "XPLM/XPLMUtilities.h"
+#  include "XPWidgets/XPUIGraphics.h"
 #  include <OpenGL/gl.h>
 #  include <OpenGL/glu.h>
 #else
+#  include "XPLMDataAccess.h"
+#  include "XPLMDisplay.h"
+#  include "XPLMGraphics.h"
+#  include "XPLMMenus.h"
+#  include "XPLMPlugin.h"
+#  include "XPLMScenery.h"
+#  include "XPLMUtilities.h"
+#  include "XPUIGraphics.h"
 #  include <GL/gl.h>
 #  include <GL/glu.h>
 #endif

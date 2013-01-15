@@ -2,17 +2,18 @@
 
 !include ..\version.mak
 
-!if "$(CPU)" == "x86"
-ARCHDIR=
-ARCHXP=
-!elseif "$(CPU)" == "amd64"
+# Work out which target we're set up for by looking for a program (ml64.exe) that only exists in the path for one target
+!if [ml64 >nul 2>&1] == 0
+CPU=x64
 ARCHDIR=64
 ARCHXP=_64
 !else
-! error CPU should be defined as x86 or amd64
+CPU=x86
+ARCHDIR=
+ARCHXP=
 !endif
 
-XPSDK=..\..\XPSDK211
+XPSDK=..\..\XPSDK212
 
 CC=cl
 #BUILD=-ZI -DDEBUG
