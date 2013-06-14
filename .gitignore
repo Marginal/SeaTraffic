@@ -1,5 +1,9 @@
 *.bak
 *.zip
 
+*.blend1
+*.blend2
+*.blend3
+
 .DS_Store
 Thumbs.db

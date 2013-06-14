@@ -11,14 +11,14 @@ BUILD=-O3 -DNDEBUG
 LDFLAGS=-Wl,-x
 DEFINES=-DAPL=1 -DIBM=0 -DLIN=0 -DVERSION=$(VERSION)
 INC=-F$(XPSDK)/Libraries/Mac -I$(XPSDK)/CHeaders/XPLM -I$(XPSDK)/CHeaders/Widgets
-CFLAGS=-arch ppc -arch i586 -arch x86_64 -pipe -Wall -single_module -dynamiclib -fvisibility=hidden -mmacosx-version-min=10.4 $(BUILD) $(DEFINES) $(INC)
+CFLAGS=-arch ppc -arch i586 -arch x86_64 -ffast-math -pipe -Wall -Winline -Wno-missing-braces -bundle -fvisibility=hidden -mmacosx-version-min=10.4 $(BUILD) $(DEFINES) $(INC)
 
+VPATH=
 SRC=routes.c seatraffic.c
-LIBS=-framework XPWidgets -framework XPLM -framework OpenGL -framework CoreFoundation
+LIBS=-framework XPLM -framework XPWidgets -framework OpenGL -framework CoreFoundation
+TARGETDIR=../$(PROJECT)
 
-RM=rm -f
-CP=cp -p
-MD=mkdir -p
+############################################################################
 
 BUILDDIR=$(shell uname)
 OBJS=$(addprefix $(BUILDDIR)/, $(addsuffix .o, $(basename $(notdir $(SRC)))))
@@ -38,17 +38,23 @@ install:	$(TARGET)
 	$(MD) ~/Desktop/X-Plane\ 10/Resources/plugins/$(PROJECT)
 	$(CP) $(TARGET) ~/Desktop/X-Plane\ 10/Resources/plugins/$(PROJECT)/
 
-$(TARGET):	$(OBJS)
+$(TARGET):	$(OBJS)| $(TARGETDIR)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(LIBS) -o $@ $+
+
+$(OBJS): | $(BUILDDIR)
 
 $(BUILDDIR):
 	$(MD) $(BUILDDIR)
 
-$(BUILDDIR)/%.o:	%.c $(BUILDDIR)
+$(BUILDDIR)/%.o:	%.c
 	$(CC) $(CFLAGS) -c -o $@ $<
+	@$(CC) $(BUILD) $(DEFINES) $(INC) -MM $< | sed -e 's|$*.o|$@|' > $(@:.o=.d)
+
+$(TARGETDIR):
+	$(MD) $(TARGETDIR)
 
 clean:
-	$(RM) *~ *.bak $(OBJS) $(TARGET)
+	$(RM) *~ *.bak $(OBJS) $(OBJS:.o=.d) $(TARGET)
 
-seatraffic.c:	seatraffic.h
-routes.c:	seatraffic.h
+# pull in dependency info
+-include $(OBJS:.o=.d)

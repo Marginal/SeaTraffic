@@ -75,59 +75,58 @@ static int drawtime, drawmax;		/* clock time taken in last main loop [us] */
 
 static inline int inrange(tile_t tile, loc_t loc)
 {
-    return ((abs(tile.south - (int) floor(loc.lat)) <= TILE_RANGE) &&
-            (abs(tile.west  - (int) floor(loc.lon)) <= TILE_RANGE));
+    return ((abs(tile.south - (int) floorf(loc.lat)) <= TILE_RANGE) &&
+            (abs(tile.west  - (int) floorf(loc.lon)) <= TILE_RANGE));
 }
 
-
-static inline int indrawrange(double xdist, double ydist)
+static inline int indrawrange(float xdist, float ydist)
 {
     return (xdist*xdist + ydist*ydist <= DRAW_DISTANCE*DRAW_DISTANCE);
 }
 
-static inline int inreflectrange(double xdist, double ydist)
+static inline int inreflectrange(float xdist, float ydist)
 {
     return (xdist*xdist + ydist*ydist <= DRAW_REFLECT*DRAW_REFLECT);
 }
 
-static inline int inwakerange(double xdist, double ydist)
+static inline int inwakerange(float xdist, float ydist)
 {
     return (xdist*xdist + ydist*ydist <= DRAW_WAKE*DRAW_WAKE);
 }
 
 
 /* Great circle distance, using Haversine formula. http://mathforum.org/library/drmath/view/51879.html */
-static double distanceto(loc_t a, loc_t b)
+static float distanceto(loc_t a, loc_t b)
 {
-    double slat=sin((b.lat-a.lat) * M_PI/360.0);
-    double slon=sin((b.lon-a.lon) * M_PI/360.0);
-    double aa=slat*slat + cos(a.lat * M_PI/180.0) * cos(b.lat * M_PI/180.0) * slon*slon;
-    return RADIUS*2.0 * atan2(sqrt(aa), sqrt(1-aa));
+    float slat=sinf((b.lat-a.lat) * (float) (M_PI/360));
+    float slon=sinf((b.lon-a.lon) * (float) (M_PI/360));
+    float aa=slat*slat + cosf(a.lat * (float) (M_PI/180)) * cosf(b.lat * (float) (M_PI/180)) * slon*slon;
+    return RADIUS*2 * atan2f(sqrtf(aa), sqrtf(1-aa));
 }
 
 
 /* Bearing of b from a [radians] http://mathforum.org/library/drmath/view/55417.html */
-static double headingto(loc_t a, loc_t b)
+static float headingto(loc_t a, loc_t b)
 {
-    double lat1=(a.lat * M_PI/180.0);
-    double lon1=(a.lon * M_PI/180.0);
-    double lat2=(b.lat * M_PI/180.0);
-    double lon2=(b.lon * M_PI/180.0);
-    double clat2=cos(lat2);
-    return fmod(atan2(sin(lon2-lon1)*clat2, cos(lat1)*sin(lat2)-sin(lat1)*clat2*cos(lon2-lon1)), M_PI*2.0);
+    float lat1=(a.lat * (float) (M_PI/180));
+    float lon1=(a.lon * (float) (M_PI/180));
+    float lat2=(b.lat * (float) (M_PI/180));
+    float lon2=(b.lon * (float) (M_PI/180));
+    float clat2=cosf(lat2);
+    return fmodf(atan2f(sinf(lon2-lon1)*clat2, cosf(lat1)*sinf(lat2)-sinf(lat1)*clat2*cosf(lon2-lon1)), (float) (M_PI*2));
 }
 
 
 /* Location distance d along heading h from a [degrees]. Assumes d < circumference/4. http://williams.best.vwh.net/avform.htm#LL */
 static void displaced(loc_t a, double h, double d, dloc_t *b)
 {
-    double lat1=(a.lat * M_PI/180.0);
-    double lon1=(a.lon * M_PI/180.0);
+    double lat1=((double) a.lat * M_PI/180);
+    double lon1=((double) a.lon * M_PI/180);
     double clat1=cos(lat1);
-    double dang=(d/RADIUS);
+    double dang=(d/(double)RADIUS);
     double sang=sin(dang);
-    b->lat=asin(sin(lat1)*cos(dang)+clat1*sang*cos(h)) * 180.0*M_1_PI;
-    b->lon=(fmod(lon1+asin(sin(h)*sang/clat1)+M_PI, M_PI*2.0) - M_PI) * 180.0*M_1_PI;
+    b->lat=asin(sin(lat1)*cos(dang)+clat1*sang*cos(h)) * (180*M_1_PI);
+    b->lon=(fmod(lon1+asin(sin(h)*sang/clat1)+M_PI, M_PI*2.0) - M_PI) * (180*M_1_PI);
 }
 
 
@@ -200,7 +199,7 @@ static void recalc(void)
             a->ship=&ships[newroute->ship_kind];
             a->route=newroute;
             a->object_ref=a->ship->object_ref[rand() % a->ship->obj_n];
-            a->altmsl=0.0f;
+            a->altmsl=0;
             a->ref_probe=XPLMCreateProbe(xplm_ProbeY);
             a->is_drawn=0;
             a->drawinfo.structSize=sizeof(XPLMDrawInfo_t);
@@ -267,7 +266,7 @@ static int drawupdate(void)
     if (active_n==0) { return 1; }	/* Nothing to do */
 
     now = XPLMGetDataf(ref_monotonic);
-    is_night = (int)(XPLMGetDataf(ref_night)+0.5);
+    is_night = (int)(XPLMGetDataf(ref_night) + 0.67f);
     view_x=XPLMGetDataf(ref_view_x);
     view_z=XPLMGetDataf(ref_view_z);
     probeinfo.structSize = sizeof(XPLMProbeInfo_t);
@@ -324,7 +323,7 @@ static int drawupdate(void)
                     probeinfo.locationY=y;	/* If probe fails set altmsl=0 */
                     result=XPLMProbeTerrainXYZ(a->ref_probe, x, y, z, &probeinfo);
                     assert (result==xplm_ProbeHitTerrain);
-                    a->altmsl=probeinfo.locationY-y;
+                    a->altmsl=(double) probeinfo.locationY - y;
                 }
                 else
                 {
@@ -345,7 +344,7 @@ static int drawupdate(void)
             if (do_hdg_update && (a->next_time-now > HDG_HOLD_TIME))	/* Don't update heading when approaching next node to prevent squirreliness */
             {
                 loc_t loc={a->loc.lat, a->loc.lon};	/* Down to float */
-                a->drawinfo.heading=headingto(loc, route->path[a->last_node+a->direction]) * 180.0*M_1_PI;
+                a->drawinfo.heading=headingto(loc, route->path[a->last_node+a->direction]) * (float) (180*M_1_PI);
             }
         }
 
@@ -353,7 +352,7 @@ static int drawupdate(void)
         {
             /* Update state after ship visits new node. Assumes last_node and last_time already updated. */
             a->last_hdg = headingto(a->route->path[a->last_node], a->route->path[a->last_node+a->direction]);
-            a->drawinfo.heading=a->last_hdg * 180.0*M_1_PI;
+            a->drawinfo.heading=a->last_hdg * (float) (180*M_1_PI);
             displaced(route->path[a->last_node], a->last_hdg, a->ship->semilen + (now-a->last_time)*a->ship->speed, &(a->loc));
             a->next_time = a->last_time + distanceto(route->path[a->last_node], route->path[a->last_node+a->direction]) / a->ship->speed;
             if ((a->last_node+a->direction == 0) || (a->last_node+a->direction == route->pathlen-1))
@@ -373,13 +372,13 @@ static int drawupdate(void)
             probeinfo.locationY=y;	/* If probe fails set altmsl=0 */
             result=XPLMProbeTerrainXYZ(a->ref_probe, x, y, z, &probeinfo);
             assert (result==xplm_ProbeHitTerrain);
-            a->altmsl=probeinfo.locationY-y;
+            a->altmsl=(double) probeinfo.locationY - y;
         }
 
         /* Draw ship */
         XPLMWorldToLocal(a->loc.lat, a->loc.lon, a->altmsl, &x, &y, &z);
         a->drawinfo.x=x; a->drawinfo.y=y; a->drawinfo.z=z;	/* double -> float */
-        if (indrawrange(x-view_x, z-view_z))
+        if (indrawrange(a->drawinfo.x-view_x, a->drawinfo.z-view_z))
         {
             a->is_drawn=1;
             XPLMDrawObjects(a->object_ref, 1, &(a->drawinfo), is_night, 1);
@@ -429,7 +428,7 @@ static int drawships(XPLMDrawingPhase inPhase, int inIsBefore, void *inRefcon)
 #ifdef DO_ACTIVE_LIST
         gettimeofday(&t1, NULL);		/* start */
 #endif
-        is_night = (int)(XPLMGetDataf(ref_night)+0.5);
+        is_night = (int)(XPLMGetDataf(ref_night) + 0.67f);
         view_x=XPLMGetDataf(ref_view_x);
         view_z=XPLMGetDataf(ref_view_z);
         a=active_routes;
@@ -479,7 +478,7 @@ static int drawwakes(XPLMDrawingPhase inPhase, int inIsBefore, void *inRefcon)
     while (a)
     {
         if (a->is_drawn &&
-            (a->ship->speed >= 10) &&				/* Only draw wakes for ships going at speed */
+            (a->ship->speed >= 7) &&				/* Only draw wakes for ships going at speed */
             (a->last_node+a->direction >= 0) && (a->last_node+a->direction < a->route->pathlen) &&	/* and not lingering */
             inwakerange(a->drawinfo.x - view_x, a->drawinfo.z - view_z))				/* and closeish */
         {
@@ -587,7 +586,6 @@ static void drawdebug(XPLMWindowID inWindowID, void *inRefcon)
     float width, width1;
     float color[] = { 1.0, 1.0, 1.0 };	/* RGB White */
     float now=XPLMGetDataf(ref_monotonic);
-    loc_t loc;
     active_route_t *a=active_routes;
 
     XPLMGetScreenSize(NULL, &top);
@@ -764,7 +762,7 @@ PLUGIN_API int XPluginStart(char *outName, char *outSignature, char *outDescript
         return failinit(outDescription);
     }
     *(c+1)='\0';
-    if (!(strcmp(c-3, "/64/"))) { *(c-2)='\0'; }	/* 64bit plugin is one level down, so go up */
+    if (!strcmp(c-3, "/32/") || !strcmp(c-3, "/64/")) { *(c-2)='\0'; }	/* plugins one level down on some builds, so go up */
 
     XPLMGetSystemPath(buffer);
     posixify(buffer);

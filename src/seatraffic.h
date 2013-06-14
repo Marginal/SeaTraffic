@@ -8,7 +8,9 @@
 #ifdef _MSC_VER
 #  define _USE_MATH_DEFINES
 #  define _CRT_SECURE_NO_DEPRECATE
-#  define inline __inline
+#  define inline __forceinline
+#else
+#  include <sys/time.h>
 #endif
 
 #include <assert.h>
@@ -50,9 +52,9 @@
 #endif
 
 /* constants */
-#define DRAW_DISTANCE 20000.0	/* can see things a long way on water [m] */
-#define DRAW_REFLECT  16000.0
-#define DRAW_WAKE     12000.0
+#define DRAW_DISTANCE 20000.f	/* can see things a long way on water [m] */
+#define DRAW_REFLECT  16000.f
+#define DRAW_WAKE     12000.f
 #define RENDERING_MAX 6		/* max value of "number of objects" rendering option */
 #define RENDERING_SCALE 10	/* multiplied by number of objects setting to give maximum number of active routes */
 #define ACTIVE_MAX (RENDERING_MAX*RENDERING_SCALE)
@@ -60,7 +62,7 @@
 #define OBJ_VARIANT_MAX 8	/* How many physical objects to use for each virtual object in X-Plane's library */
 #define HDG_HOLD_TIME 10.0f	/* Only update headings and altitudes periodically [s] */
 #define LINGER_TIME 300.0f	/* How long should ships hang around at the dock at the end of their route [s] */
-#define RADIUS 6378145.0	/* from sim/physics/earth_radius_m [m] */
+#define RADIUS 6378145.f	/* from sim/physics/earth_radius_m [m] */
 
 /* rendering options */
 #define DO_LOCAL_MAP
@@ -140,7 +142,7 @@ typedef struct active_route_t
     float last_time, next_time;	/* Time we left last_node, expected time to hit the next node */
     XPLMObjectRef object_ref;	/* X-Plane object */
     dloc_t loc;			/* Ship's current location */
-    float altmsl;		/* Altitude */
+    double altmsl;		/* Altitude */
     XPLMProbeRef ref_probe;	/* Terrain probe */
     int is_drawn;		/* Whether to draw the ship */
     XPLMDrawInfo_t drawinfo;	/* Where to draw the ship */
@@ -169,3 +171,4 @@ active_route_t *active_route_add(active_route_t **active_routes);
 active_route_t *active_route_get(active_route_t *active_routes, int n);
 active_route_t *active_route_get_byroute(active_route_t *active_routes, route_t *route);
 void active_route_pop(active_route_t **active_routes, int n);
+int active_route_length(active_route_t *active_routes);

@@ -14,18 +14,21 @@ BUILD=-O3 -s -DNDEBUG
 LDFLAGS=-Wl,-x
 DEFINES=-DAPL=0 -DIBM=0 -DLIN=1 -DVERSION=$(VERSION)
 INC=-I$(XPSDK)/CHeaders/XPLM -I$(XPSDK)/CHeaders/Widgets
-CFLAGS=-pipe -Wall -static-libgcc -shared -fPIC -fvisibility=hidden -fshort-enums $(BUILD) $(DEFINES) $(INC)
+CFLAGS=-march=core2 -ffast-math -pipe -Wall -Wdouble-promotion -Winline -Wno-missing-braces -static-libgcc -shared -fPIC -fvisibility=hidden -fshort-enums $(BUILD) $(DEFINES) $(INC)
 
+VPATH=
 SRC=routes.c seatraffic.c
 LIBS=-lGLU -lGL
+TARGETDIR=../$(PROJECT)
+
+############################################################################
 
 BUILD_32=$(shell uname)32
 OBJS_32=$(addprefix $(BUILD_32)/, $(addsuffix .o, $(basename $(notdir $(SRC)))))
-TARGET_32=../$(PROJECT)/lin.xpl
+TARGET_32=$(TARGETDIR)/lin.xpl
 BUILD_64=$(shell uname)64
 OBJS_64=$(addprefix $(BUILD_64)/, $(addsuffix .o, $(basename $(notdir $(SRC)))))
-TARGET_64=../$(PROJECT)/64/lin.xpl
-
+TARGET_64=$(TARGETDIR)/64/lin.xpl
 TARGET=$(TARGET_32) $(TARGET_64)
 
 RM=rm -f
@@ -44,11 +47,15 @@ install:	$(TARGET_32) $(TARGET_64)
 	$(MD) /media/jonathan/Desktop/X-Plane\ 10/Resources/plugins/$(PROJECT)/64
 	$(CP) $(TARGET_64) /media/jonathan/Desktop/X-Plane\ 10/Resources/plugins/$(PROJECT)/64/
 
-$(TARGET_32):	$(OBJS_32)
+$(TARGET_32):	$(OBJS_32) | $(TARGETDIR)
 	$(CC) $(CFLAGS) $(LDFLAGS) -m32 $(LIBS) -o $@ $+
 
-$(TARGET_64):	$(OBJS_64)
+$(TARGET_64):	$(OBJS_64) | $(TARGETDIR)/64
 	$(CC) $(CFLAGS) $(LDFLAGS) -m64 $(LIBS) -o $@ $+
+
+$(OBJS_32): | $(BUILD_32)
+
+$(OBJS_64): | $(BUILD_64)
 
 $(BUILD_32):
 	$(MD) $(BUILD_32)
@@ -56,16 +63,19 @@ $(BUILD_32):
 $(BUILD_64):
 	$(MD) $(BUILD_64)
 
-$(BUILD_32)/%.o:	%.c $(BUILD_32)
-	$(CC) $(CFLAGS) -m32 -c -o $@ $<
+$(BUILD_32)/%.o:	%.c
+	$(CC)  $(CFLAGS) -m32 -c -o $@ $<
+	@$(CC) $(CFLAGS) -m32 -MM $< | sed -e 's|$*.o|$@|' > $(@:.o=.d)
 
-$(BUILD_64)/%.o:	%.c $(BUILD_64)
-	$(CC) $(CFLAGS) -m64 -c -o $@ $<
+$(BUILD_64)/%.o:	%.c
+	$(CC)  $(CFLAGS) -m64 -c -o $@ $<
+	@$(CC) $(CFLAGS) -m64 -MM $< | sed -e 's|$*.o|$@|' > $(@:.o=.d)
+
+$(TARGETDIR):
+	$(MD) $(TARGETDIR)
+
+$(TARGETDIR)/64:
+	$(MD) $(TARGETDIR)/64
 
 clean:
-	$(RM) *~ *.bak $(OBJS_32) $(OBJS_64) $(TARGET_32) $(TARGET_64)
-
-$(BUILD_32)/seatraffic.o:	seatraffic.h
-$(BUILD_64)/seatraffic.o:	seatraffic.h
-$(BUILD_32)/routes.o:	seatraffic.h
-$(BUILD_64)/routes.o:	seatraffic.h
+	$(RM) *~ *.bak $(OBJS_32) $(OBJS_32:.o=.d) $(OBJS_64) $(OBJS_64:.o=.d) $(TARGET_32) $(TARGET_64)

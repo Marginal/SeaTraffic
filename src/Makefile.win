@@ -1,29 +1,31 @@
 # -*-Makefile-*- in NMAKE format
+# Makes 32bit & 64bit version for X-Plane 10+, plus 32bit version without SSE2 for X-Plane 9
 
 !include ..\version.mak
-
-# Work out which target we're set up for by looking for a program (ml64.exe) that only exists in the path for one target
-!if [ml64 >nul 2>&1] == 0
-CPU=x64
-ARCHDIR=64
-ARCHXP=_64
-!else
-CPU=x86
-ARCHDIR=
-ARCHXP=
-!endif
 
 XPSDK=..\..\XPSDK212
 
 CC=cl
 #BUILD=-ZI -DDEBUG
-BUILD=-Ox -GF -DNDEBUG
+BUILD=-O2 -DNDEBUG
 DEFINES=-DIBM=1 -DAPL=0 -DLIN=0 -DVERSION=$(VERSION)
 INC=-I$(XPSDK)\CHeaders\XPLM -I$(XPSDK)/CHeaders/Widgets
-CFLAGS=-nologo -LD $(BUILD) $(DEFINES) $(INC)
+CFLAGS=-nologo -fp:fast -LD $(BUILD) $(DEFINES) $(INC)
 
 SRC=routes.c seatraffic.c
-TARGET=..\$(PROJECT)\$(ARCHDIR)\win.xpl
+TARGETDIR=..\$(PROJECT)
+
+# Work out which target we're set up for by looking for a program (ml64.exe) that only exists in the path for one target
+!if [ml64 >nul 2>&1] == 0
+CPU=x64
+ARCHXP=_64
+TARGET=$(TARGETDIR)\64\win.xpl
+!else
+CPU=x86
+ARCHXP=
+TARGET=$(TARGETDIR)\32\win.xpl $(TARGETDIR)\win.xpl
+!endif
+
 LIBS=$(XPSDK)\Libraries\Win\XPLM$(ARCHXP).lib $(XPSDK)\Libraries\Win\XPWidgets$(ARCHXP).lib GlU32.Lib OpenGL32.Lib
 
 RM=del /q
@@ -34,17 +36,32 @@ all:	$(TARGET)
 
 install:	$(TARGET)
 !if "$(CPU)" == "x86"
-	-$(MD) "X:\Desktop\X-Plane 9\Resources\plugins\$(PROJECT)\$(ARCHDIR)"
-	$(CP) $(TARGET) "X:\Desktop\X-Plane 9\Resources\plugins\$(PROJECT)\$(ARCHDIR)\"
+	-$(MD) "X:\Desktop\X-Plane 9\Resources\plugins\$(PROJECT)\"
+	$(CP) $(TARGETDIR)\win.xpl "X:\Desktop\X-Plane 9\Resources\plugins\$(PROJECT)\"
+	-$(MD) "X:\Desktop\X-Plane 10\Resources\plugins\$(PROJECT)\32"
+	$(CP) $(TARGETDIR)\32\win.xpl "X:\Desktop\X-Plane 10\Resources\plugins\$(PROJECT)\32\"
+!else
+	-$(MD) "X:\Desktop\X-Plane 10\Resources\plugins\$(PROJECT)\64\"
+	$(CP) $(TARGETDIR)\64\win.xpl "X:\Desktop\X-Plane 10\Resources\plugins\$(PROJECT)\64\"
 !endif
-	-$(MD) "X:\Desktop\X-Plane 10\Resources\plugins\$(PROJECT)\$(ARCHDIR)"
-	$(CP) $(TARGET) "X:\Desktop\X-Plane 10\Resources\plugins\$(PROJECT)\$(ARCHDIR)\"
 
-$(TARGET):	clean $(SRC)
+$(TARGETDIR)\win.xpl:
+	-@if not exist "$(TARGETDIR)" $(MD) "$(TARGETDIR)"
+	$(CC) $(CFLAGS) -Fe$@ -Fd$* $(SRC) $(LIBS)
+
+$(TARGETDIR)\32\win.xpl:
+	-@if not exist "$(TARGETDIR)\32" $(MD) "$(TARGETDIR)\32"
+	$(CC) -arch:SSE2 $(CFLAGS) -Fe$@ -Fd$* $(SRC) $(LIBS)
+
+$(TARGETDIR)\64\win.xpl:
+	-@if not exist "$(TARGETDIR)\64" $(MD) "$(TARGETDIR)\64"
 	$(CC) $(CFLAGS) -Fe$@ -Fd$* $(SRC) $(LIBS)
 
 clean:
-	-$(RM) *~ *.bak *.obj $(TARGET:.xpl=).*
+	-$(RM) *~ *.bak *.obj
+	-$(RM) $(TARGETDIR)\win.*
+	-$(RM) $(TARGETDIR)\32\win.*
+	-$(RM) $(TARGETDIR)\64\win.*
 
 seatraffic.c:	seatraffic.h
 routes.c:	seatraffic.h
