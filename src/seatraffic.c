@@ -194,12 +194,15 @@ static void recalc(void)
 
         while ((active_n < active_max) && candidate_n)
         {
+            int obj_n;
             route_t *newroute = route_list_pop(&candidates, rand() % candidate_n--);
             active_n++;
             a=active_route_add(&active_routes);
             a->ship=&ships[newroute->ship_kind];
             a->route=newroute;
-            a->object_ref=a->ship->object_ref[rand() % a->ship->obj_n];
+            obj_n = rand() % a->ship->obj_n;
+            a->object_ref = a->ship->object_ref[obj_n];
+            a->object_name = a->ship->object_name[obj_n];
             a->altmsl=0;
             a->ref_probe=XPLMCreateProbe(xplm_ProbeY);
             a->drawinfo.structSize=sizeof(XPLMDrawInfo_t);
@@ -237,6 +240,7 @@ static void recalc(void)
             a->new_node=1;		/* Tell drawships() to calculate state */
             a->next_time = a->last_time + distanceto(newroute->path[a->last_node], newroute->path[a->last_node+a->direction]) / a->ship->speed;
         }
+        active_route_sort(&active_routes, active_n);	/* Sort active routes by object name for more efficient drawing */
     }
     route_list_free(&candidates);
 }
@@ -408,7 +412,6 @@ static int drawships(XPLMDrawingPhase inPhase, int inIsBefore, void *inRefcon)
         last_frame = now;
 #ifdef DO_ACTIVE_LIST
         drawtime = 0;
-        if (!XPLMGetDatai(ref_rentype)) last_frame = 0;	/* In DEBUG recalculate while paused for easier debugging */
 #endif
     }
 
@@ -454,6 +457,7 @@ static int drawships(XPLMDrawingPhase inPhase, int inIsBefore, void *inRefcon)
     gettimeofday(&t2, NULL);		/* stop */
     drawtime += (t2.tv_sec-t1.tv_sec) * 1000000 + t2.tv_usec - t1.tv_usec;
     if (drawtime>drawmax) { drawmax=drawtime; }
+    if (!render_pass) { last_frame = 0; }	/* In DEBUG recalculate while paused for easier debugging / profiling */
 #endif
     return 1;
 }
@@ -653,10 +657,10 @@ static void libraryenumerator(const char *inFilePath, void *inRef)
     ship_t *ship=inRef;
     if ((ships->obj_n>=OBJ_VARIANT_MAX) || (ships->obj_n<0)) { return; }
     if (!(strcmp(strrchr(inFilePath, '/'), "/placeholder.obj"))) { return; }	/* OpenSceneryX placeholder */
-    ship->object_ref[ship->obj_n]=loadobject(inFilePath);
-    if (ship->object_ref[ship->obj_n]==NULL)
+    if (!(ship->object_ref[ship->obj_n] = loadobject(inFilePath)) ||
+        !(ship->object_name[ship->obj_n] = strdup(inFilePath)))	/* Not clear if inFilePath is persistant so copy */
     {
-        ship->obj_n = -1;
+        ship->obj_n = -1;	/* Fail */
     }
     else
     {
@@ -797,6 +801,7 @@ PLUGIN_API void XPluginReceiveMessage(XPLMPluginID inFrom, long inMessage, void 
                     }
                     else
                     {
+                        ship->object_name[ship->obj_n] = object;
                         ship->obj_n=ship->obj_n+1;
                     }
                 }

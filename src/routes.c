@@ -288,3 +288,28 @@ int active_route_length(active_route_t *active_routes)
 }
 
 
+/* Callback for active_route_sort */
+static int sortactive(const void *a, const void *b)
+{
+    const active_route_t *const *ra = a, *const *rb = b;
+    return strcmp((*ra)->object_name, (*rb)->object_name);
+}
+
+
+/* Sort active routes by object name to minimise texture swaps when drawing.
+ * Rather than actually shuffling the routes around in memory we just sort an array of pointers and then go back
+ * and fix up the linked list. */
+void active_route_sort(active_route_t **active_routes, int active_n)
+{
+    int i;
+    active_route_t *table[ACTIVE_MAX], *active_route;
+
+    if (active_n <= 2) return;		/* Nothing useful to do */
+
+    for (i = 0, active_route = *active_routes; active_route; active_route = active_route->next)
+        table[i++] = active_route;
+    qsort(table, active_n, sizeof(active_route), sortactive);
+    *active_routes = table[0];
+    for (i = 0; i < active_n; i++)
+        table[i]->next = i < active_n-1 ? table[i+1] : NULL;
+}

@@ -86,6 +86,7 @@ typedef struct
     float semilen;				/* [m] */
     int obj_n;					/* Number of physical .objs */
     XPLMObjectRef object_ref[OBJ_VARIANT_MAX];	/* Physical .obj handles */
+    const char *object_name[OBJ_VARIANT_MAX];	/* Physical .obj names */
 } ship_t;
 
 typedef struct
@@ -141,6 +142,7 @@ typedef struct active_route_t
     float last_hdg;		/* The heading we set off from last_node */
     float last_time, next_time;	/* Time we left last_node, expected time to hit the next node */
     XPLMObjectRef object_ref;	/* X-Plane object */
+    const char *object_name;	/* X-Plane object name for sorting */
     dloc_t loc;			/* Ship's current location */
     double altmsl;		/* Altitude */
     XPLMProbeRef ref_probe;	/* Terrain probe */
@@ -171,3 +173,4 @@ active_route_t *active_route_get(active_route_t *active_routes, int n);
 active_route_t *active_route_get_byroute(active_route_t *active_routes, route_t *route);
 void active_route_pop(active_route_t **active_routes, int n);
 int active_route_length(active_route_t *active_routes);
+void active_route_sort(active_route_t **active_routes, int active_n);
