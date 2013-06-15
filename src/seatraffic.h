@@ -62,6 +62,7 @@
 #define OBJ_VARIANT_MAX 8	/* How many physical objects to use for each virtual object in X-Plane's library */
 #define HDG_HOLD_TIME 10.0f	/* Only update headings and altitudes periodically [s] */
 #define LINGER_TIME 300.0f	/* How long should ships hang around at the dock at the end of their route [s] */
+#define SHIP_SPACING 8		/* Try to space ships out by this many times their semilen */
 #define RADIUS 6378145.f	/* from sim/physics/earth_radius_m [m] */
 
 /* rendering options */
@@ -162,7 +163,7 @@ const char *shiptokens[ship_kind_count];
 int readroutes(char *mypath, char *err);
 route_list_t *getroutesbytile(int south, int west);
 
-int route_list_add(route_list_t **route_list, route_t *route);
+route_list_t *route_list_add(route_list_t **route_list, route_t *route);
 route_list_t *route_list_get_byroute(route_list_t *route_list, route_t *route);
 route_t *route_list_pop(route_list_t **route_list, int n);
 int route_list_length(route_list_t *route_list);

@@ -131,6 +131,31 @@ static void displaced(loc_t a, double h, double d, dloc_t *b)
 }
 
 
+/* is this location within distance of the active routes */
+static int tooclose(active_route_t *active_routes, loc_t loc, int distance)
+{
+    active_route_t *active_route = active_routes;
+    while (active_route)
+    {
+        loc_t other;
+        if (active_route->new_node)
+        {
+            /* location hasn't been calculated yet, just use its current node's location */
+            other.lat = active_route->route->path[active_route->last_node].lat;
+            other.lon = active_route->route->path[active_route->last_node].lon;
+        }
+        else
+        {
+            other.lat = active_route->loc.lat;
+            other.lon = active_route->loc.lon;
+        }
+        if (distanceto(loc, other) <= distance) { return 1; }
+        active_route = active_route -> next;
+    }
+    return 0;
+}
+
+
 /* Adjust active routes */
 static void recalc(void)
 {
@@ -178,9 +203,9 @@ static void recalc(void)
             {
                 /* Check it's neither already active nor already a candidate from an adjacent tile */
                 if (!active_route_get_byroute(active_routes, route_list->route) &&
-                    !route_list_get_byroute(candidates, route_list->route))
+                    !route_list_get_byroute(candidates, route_list->route) &&
+                    route_list_add(&candidates, route_list->route))
                 {
-                    route_list_add(&candidates, route_list->route);
                     candidate_n++;
                 }
                 route_list=route_list->next;
@@ -197,7 +222,7 @@ static void recalc(void)
             int obj_n;
             route_t *newroute = route_list_pop(&candidates, rand() % candidate_n--);
             active_n++;
-            a=active_route_add(&active_routes);
+            if (!(a = active_route_add(&active_routes))) { break; }	/* Alloc failure! */
             a->ship=&ships[newroute->ship_kind];
             a->route=newroute;
             obj_n = rand() % a->ship->obj_n;
@@ -209,14 +234,14 @@ static void recalc(void)
             a->drawinfo.pitch=a->drawinfo.roll=0;
 
             /* Find a starting node */
-            if (inrange(current_tile, newroute->path[0]))
+            if (inrange(current_tile, newroute->path[0]) && !tooclose(active_routes->next, newroute->path[0], SHIP_SPACING * a->ship->semilen))
             {
                 /* Start of path */
                 a->direction=1;
                 a->last_node=0;
                 a->last_time=now-(a->ship->semilen/a->ship->speed);	/* Move ship away from the dock */
             }
-            else if (inrange(current_tile, newroute->path[newroute->pathlen-1]))
+            else if (inrange(current_tile, newroute->path[newroute->pathlen-1]) && !tooclose(active_routes->next, newroute->path[newroute->pathlen-1], SHIP_SPACING * a->ship->semilen))
             {
                 /* End of path */
                 a->direction=-1;
@@ -225,15 +250,42 @@ static void recalc(void)
             }
             else
             {
+                a->direction=0;
                 for (i=1; i<newroute->pathlen-1; i++)
-                {
-                    if (inrange(current_tile, newroute->path[i]))
+                    if (inrange(current_tile, newroute->path[i]) && !tooclose(active_routes->next, newroute->path[i], SHIP_SPACING * a->ship->semilen))
                     {
                         /* First node in range */
                         a->direction=1;
                         a->last_node=i;
                         a->last_time=now;
                         break;
+                    }
+                if (!a->direction)
+                {
+                    /* Found nothing suitable! Look again, and just shove the ship along its path */
+                    a->last_time = now - (SHIP_SPACING * a->ship->semilen / a->ship->speed);
+                    if (inrange(current_tile, newroute->path[0]))
+                    {
+                        /* Start of path */
+                        a->direction=1;
+                        a->last_node=0;
+                    }
+                    else if (inrange(current_tile, newroute->path[newroute->pathlen-1]))
+                    {
+                        /* End of path */
+                        a->direction=-1;
+                        a->last_node=newroute->pathlen-1;
+                    }
+                    else
+                    {
+                        for (i=1; i<newroute->pathlen-1; i++)
+                            if (inrange(current_tile, newroute->path[i]))
+                            {
+                                /* First node in range */
+                                a->direction=1;
+                                a->last_node=i;
+                                break;
+                            }
                     }
                 }
             }

@@ -163,15 +163,15 @@ route_list_t *getroutesbytile(int south, int west)
  Linked list manipulation
  **********************************************************************/
 
-/* Adds to front of list */
-int route_list_add(route_list_t **route_list, route_t *route)
+/* Allocates and adds to front of list */
+route_list_t *route_list_add(route_list_t **route_list, route_t *route)
 {
     route_list_t *newroute;
     if (!(newroute=malloc(sizeof(route_list_t)))) { return 0; }
     newroute->route=route;
     newroute->next=*route_list;
     *route_list=newroute;
-    return 1;
+    return *route_list;
 }
 
 
@@ -229,7 +229,7 @@ void route_list_free(route_list_t **route_list)
 }
 
 
-/* Adds to front of list */
+/* Allocates and adds to front of list */
 active_route_t *active_route_add(active_route_t **active_routes)
 {
     active_route_t *newroute;
