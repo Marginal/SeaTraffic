@@ -55,9 +55,8 @@
 #define DRAW_DISTANCE 20000.f	/* can see things a long way on water [m] */
 #define DRAW_REFLECT  16000.f
 #define DRAW_WAKE     12000.f
-#define RENDERING_MAX 6		/* max value of "number of objects" rendering option */
-#define RENDERING_SCALE 10	/* multiplied by number of objects setting to give maximum number of active routes */
-#define ACTIVE_MAX (RENDERING_MAX*RENDERING_SCALE)
+#define RENDERING_SCALE 16	/* multiplied by number of objects setting to give maximum number of active routes */
+#define ACTIVE_MAX (3*RENDERING_SCALE)
 #define TILE_RANGE 1		/* How many tiles away from plane's tile to render boats */
 #define OBJ_VARIANT_MAX 8	/* How many physical objects to use for each virtual object in X-Plane's library */
 #define HDG_HOLD_TIME 10.0f	/* Only update headings and altitudes periodically [s] */

@@ -55,13 +55,13 @@ static const ship_object_t ship_objects[] =
 };
 
 static XPLMDataRef ref_view_x, ref_view_y, ref_view_z, ref_view_h;
-static XPLMDataRef ref_plane_lat, ref_plane_lon, ref_night, ref_monotonic, ref_renopt, ref_rentype;
+static XPLMDataRef ref_plane_lat, ref_plane_lon, ref_night, ref_monotonic, ref_renopt=0, ref_rentype;
 static XPLMObjectRef wake_big_ref, wake_med_ref;
 static float last_frame=0;		/* last time we recalculated */
 static int done_init=0, need_recalc=1;
 static tile_t current_tile={0,0};
 static int active_n=0;
-static int active_max=3*RENDERING_SCALE;
+static int active_max=2*RENDERING_SCALE;	/* for v9 */
 static active_route_t *active_routes = NULL;
 static XPLMMenuID my_menu_id;
 static int do_wakes=0;
@@ -796,7 +796,6 @@ PLUGIN_API int XPluginStart(char *outName, char *outSignature, char *outDescript
     ref_night    =XPLMFindDataRef("sim/graphics/scenery/percent_lights_on");
     ref_rentype  =XPLMFindDataRef("sim/graphics/view/world_render_type");
     ref_monotonic=XPLMFindDataRef("sim/time/total_running_time_sec");
-    ref_renopt   =XPLMFindDataRef("sim/private/reno/draw_objs_06");
     if (!(ref_view_x && ref_view_y && ref_view_z && ref_view_h && ref_plane_lat && ref_plane_lon && ref_night && ref_rentype && ref_monotonic))
     {
         strcpy(outDescription, "Can't access X-Plane datarefs!");
@@ -875,6 +874,7 @@ PLUGIN_API void XPluginReceiveMessage(XPLMPluginID inFrom, long inMessage, void 
             my_menu_index = XPLMAppendMenuItem(XPLMFindPluginsMenu(), "SeaTraffic", NULL, 1);
             my_menu_id = XPLMCreateMenu("SeaTraffic", XPLMFindPluginsMenu(), my_menu_index, menuhandler, NULL);
 
+            ref_renopt = XPLMFindDataRef("sim/private/controls/reno/draw_objs_06");	/* v10+ */
             XPLMEnableFeature("XPLM_WANTS_REFLECTIONS", 1);
             XPLMRegisterDrawCallback(drawships, xplm_Phase_Objects, 1, NULL);		/* Before other 3D objects */
 
@@ -894,6 +894,7 @@ PLUGIN_API void XPluginReceiveMessage(XPLMPluginID inFrom, long inMessage, void 
         {
             active_max=XPLMGetDatai(ref_renopt)*RENDERING_SCALE;
             if (active_max>ACTIVE_MAX) { active_max=ACTIVE_MAX; }
+            need_recalc = 1;
         }
     }
 }
