@@ -144,7 +144,6 @@ typedef struct active_route_t
     dloc_t loc;			/* Ship's current location */
     double altmsl;		/* Altitude */
     XPLMProbeRef ref_probe;	/* Terrain probe */
-    int is_drawn;		/* Whether to draw the ship */
     XPLMDrawInfo_t drawinfo;	/* Where to draw the ship */
 #ifdef DO_LOCAL_MAP
     int mapx, mapy;		/* position in local map */

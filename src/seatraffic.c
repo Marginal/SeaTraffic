@@ -57,13 +57,14 @@ static const ship_object_t ship_objects[] =
 static XPLMDataRef ref_view_x, ref_view_y, ref_view_z, ref_view_h;
 static XPLMDataRef ref_plane_lat, ref_plane_lon, ref_night, ref_monotonic, ref_renopt, ref_rentype;
 static XPLMObjectRef wake_big_ref, wake_med_ref;
+static float last_frame=0;		/* last time we recalculated */
 static int done_init=0, need_recalc=1;
 static tile_t current_tile={0,0};
 static int active_n=0;
 static int active_max=3*RENDERING_SCALE;
 static active_route_t *active_routes = NULL;
 static XPLMMenuID my_menu_id;
-static int do_reflections=1;
+static int do_wakes=0;
 #ifdef DO_LOCAL_MAP
 static int do_local_map=0;
 #endif
@@ -201,7 +202,6 @@ static void recalc(void)
             a->object_ref=a->ship->object_ref[rand() % a->ship->obj_n];
             a->altmsl=0;
             a->ref_probe=XPLMCreateProbe(xplm_ProbeY);
-            a->is_drawn=0;
             a->drawinfo.structSize=sizeof(XPLMDrawInfo_t);
             a->drawinfo.pitch=a->drawinfo.roll=0;
 
@@ -248,8 +248,7 @@ static int drawupdate(void)
 
     tile_t new_tile;
     float now;
-    int is_night, do_hdg_update, active_i;
-    float view_x, view_z;
+    int do_hdg_update, active_i;
     XPLMProbeInfo_t probeinfo;
     active_route_t *a;
 
@@ -265,13 +264,10 @@ static int drawupdate(void)
 
     if (active_n==0) { return 1; }	/* Nothing to do */
 
-    now = XPLMGetDataf(ref_monotonic);
-    is_night = (int)(XPLMGetDataf(ref_night) + 0.67f);
-    view_x=XPLMGetDataf(ref_view_x);
-    view_z=XPLMGetDataf(ref_view_z);
     probeinfo.structSize = sizeof(XPLMProbeInfo_t);
 
     /* Headings change slowly. Reduce time in this function by updating them only periodically */
+    now = XPLMGetDataf(ref_monotonic);
     do_hdg_update = (now>=next_hdg_update);
     if (do_hdg_update)
     {
@@ -375,18 +371,9 @@ static int drawupdate(void)
             a->altmsl=(double) probeinfo.locationY - y;
         }
 
-        /* Draw ship */
+        /* In local co-ordinates for drawing */
         XPLMWorldToLocal(a->loc.lat, a->loc.lon, a->altmsl, &x, &y, &z);
         a->drawinfo.x=x; a->drawinfo.y=y; a->drawinfo.z=z;	/* double -> float */
-        if (indrawrange(a->drawinfo.x-view_x, a->drawinfo.z-view_z))
-        {
-            a->is_drawn=1;
-            XPLMDrawObjects(a->object_ref, 1, &(a->drawinfo), is_night, 1);
-        }
-        else
-        {
-            a->is_drawn=0;
-        }
 
         a->new_node=0;
         a=a->next;
@@ -400,96 +387,72 @@ static int drawupdate(void)
 /* XPLMRegisterDrawCallback callback */
 static int drawships(XPLMDrawingPhase inPhase, int inIsBefore, void *inRefcon)
 {
-    /* We're called multiple times per frame - normal and for reflections (irrespective of the user's settings in Rendering Options).
-     * We always render simple reflections, and in this phase just draw the ships without updating routes & locations. */
     active_route_t *a;
     int is_night;
+    float now;
     float view_x, view_z;
-    int reflections=XPLMGetDatai(ref_rentype);
+    int render_pass;
 #ifdef DO_ACTIVE_LIST
     struct timeval t1, t2;
+    gettimeofday(&t1, NULL);		/* start */
 #endif
+
     assert((inPhase==xplm_Phase_Objects) && inIsBefore);
 
-    switch (reflections)
+    /* We're potentially called multiple times per frame:
+     * reflections ("sim/graphics/view/world_render_type" == 1), multiple shadows (== 3) and finally normal (== 0).
+     * So skip calculations if we've already run the calculations for this frame. */
+    if ((now = XPLMGetDataf(ref_monotonic)) != last_frame)
     {
-    case 0:	/* normal */
-#ifdef DO_ACTIVE_LIST
-        gettimeofday(&t1, NULL);		/* start */
-#endif
         drawupdate();
+        last_frame = now;
 #ifdef DO_ACTIVE_LIST
-        gettimeofday(&t2, NULL);		/* stop */
-        drawtime = (do_reflections ? drawtime : 0) + (t2.tv_sec-t1.tv_sec) * 1000000 + t2.tv_usec - t1.tv_usec;	/* cumulative with reflections */
-        if (drawtime>drawmax) { drawmax=drawtime; }
+        drawtime = 0;
+        if (!XPLMGetDatai(ref_rentype)) last_frame = 0;	/* In DEBUG recalculate while paused for easier debugging */
 #endif
-        break;
-    case 1:	/* simple reflections  - disabled by XPLM_WANTS_REFLECTIONS==0 */
-#ifdef DO_ACTIVE_LIST
-        gettimeofday(&t1, NULL);		/* start */
-#endif
-        is_night = (int)(XPLMGetDataf(ref_night) + 0.67f);
-        view_x=XPLMGetDataf(ref_view_x);
-        view_z=XPLMGetDataf(ref_view_z);
-        a=active_routes;
-        while (a)
-        {
-            if (a->is_drawn && inreflectrange(a->drawinfo.x - view_x, a->drawinfo.z - view_z))
-            {
-                XPLMDrawObjects(a->object_ref, 1, &(a->drawinfo), is_night, 1);
-            }
-            a=a->next;
-        }
-#ifdef DO_ACTIVE_LIST
-        gettimeofday(&t2, NULL);		/* stop */
-        drawtime = (t2.tv_sec-t1.tv_sec) * 1000000 + t2.tv_usec - t1.tv_usec;	/* reflections are drawn before normal */
-#endif
-        break;
-    // case 3:	/* X-Plane 10 - complex reflections? */
     }
 
-    return 1;
-}
-
-
-/* XPLMRegisterDrawCallback callback, if do_reflections.
- * This is called after drawing the ship, so that the ship's hull is visible through alpha. */
-static int drawwakes(XPLMDrawingPhase inPhase, int inIsBefore, void *inRefcon)
-{
-    active_route_t *a;
-    float view_x, view_z;
-    int reflections=XPLMGetDatai(ref_rentype);
-#ifdef DO_ACTIVE_LIST
-    struct timeval t1, t2;
-#endif
-    assert((inPhase==xplm_Phase_Objects) && !inIsBefore);
-
-    if (reflections) { return 1; }				/* Skip reflections phase */
-
-#ifdef DO_ACTIVE_LIST
-    gettimeofday(&t1, NULL);					/* start */
-#endif
+    render_pass = XPLMGetDatai(ref_rentype);
+    is_night = (int) (XPLMGetDataf(ref_night) + 0.67f);
     view_x=XPLMGetDataf(ref_view_x);
     view_z=XPLMGetDataf(ref_view_z);
-    a=active_routes;
-    // XPLMSetGraphicsState(1, 1, 1,   1, 1,   0, 0);		/* No depth test/write  - doesn't work with XPLMDrawObjects */
-    glEnable(GL_POLYGON_OFFSET_FILL);				/* Do this instead - Yuk! */
-    glPolygonOffset(-2,-2);
-    while (a)
+
+    if (render_pass == 1)		/* reflections */
     {
-        if (a->is_drawn &&
-            (a->ship->speed >= 7) &&				/* Only draw wakes for ships going at speed */
-            (a->last_node+a->direction >= 0) && (a->last_node+a->direction < a->route->pathlen) &&	/* and not lingering */
-            inwakerange(a->drawinfo.x - view_x, a->drawinfo.z - view_z))				/* and closeish */
-        {
-            XPLMDrawObjects(a->ship->semilen >= 40 ? wake_big_ref : wake_med_ref, 1, &(a->drawinfo), 0, 1);
-        }
-        a=a->next;
+        for (a=active_routes; a; a=a->next)
+            if (inreflectrange(a->drawinfo.x - view_x, a->drawinfo.z - view_z))
+                XPLMDrawObjects(a->object_ref, 1, &(a->drawinfo), is_night, 1);
+        do_wakes = 1;			/* Do wakes on base pass if reflections enabled */
     }
-    glDisable(GL_POLYGON_OFFSET_FILL);
+    else				/* shadows or base */
+    {
+        for (a=active_routes; a; a=a->next)
+            if (indrawrange(a->drawinfo.x - view_x, a->drawinfo.z - view_z))
+                XPLMDrawObjects(a->object_ref, 1, &(a->drawinfo), is_night, 1);
+
+        /* Wakes. Drawn after drawing the ships, so that the ships' hulls are visible through alpha.
+         * Batched together to reduce texture swaps. */
+        if (render_pass == 0 && do_wakes)	/* Only draw wakes in base pass */
+        {
+            do_wakes = 0;
+            // XPLMSetGraphicsState(1, 1, 1,   1, 1,   0, 0);	/* No depth test/write  - doesn't work with XPLMDrawObjects */
+            glEnable(GL_POLYGON_OFFSET_FILL);			/* Do this instead - Yuk! */
+            glPolygonOffset(-2,-2);
+
+            for (a=active_routes; a; a=a->next)
+                if ((a->ship->speed >= 7) &&			/* Only draw wakes for ships going at speed */
+                    (a->last_node+a->direction >= 0) && (a->last_node+a->direction < a->route->pathlen) &&	/* and not lingering */
+                    inwakerange(a->drawinfo.x - view_x, a->drawinfo.z - view_z))				/* and closeish */
+                {
+                    XPLMDrawObjects(a->ship->semilen >= 40 ? wake_big_ref : wake_med_ref, 1, &(a->drawinfo), 0, 1);
+                }
+            glDisable(GL_POLYGON_OFFSET_FILL);
+        }
+    }
+
 #ifdef DO_ACTIVE_LIST
     gettimeofday(&t2, NULL);		/* stop */
-    drawtime += (t2.tv_sec-t1.tv_sec) * 1000000 + t2.tv_usec - t1.tv_usec;	/* wakes are drawn last */
+    drawtime += (t2.tv_sec-t1.tv_sec) * 1000000 + t2.tv_usec - t1.tv_usec;
     if (drawtime>drawmax) { drawmax=drawtime; }
 #endif
     return 1;
@@ -586,6 +549,9 @@ static void drawdebug(XPLMWindowID inWindowID, void *inRefcon)
     float width, width1;
     float color[] = { 1.0, 1.0, 1.0 };	/* RGB White */
     float now=XPLMGetDataf(ref_monotonic);
+    float view_x=XPLMGetDataf(ref_view_x);
+    float view_z=XPLMGetDataf(ref_view_z);
+
     active_route_t *a=active_routes;
 
     XPLMGetScreenSize(NULL, &top);
@@ -617,7 +583,7 @@ static void drawdebug(XPLMWindowID inWindowID, void *inRefcon)
         XPLMDrawString(color, left + 5, top - 30, buf, 0, xplmFont_Basic);
         sprintf(buf, "Now:  %11.7f,%12.7f %7.1f", a->loc.lat, a->loc.lon, a->altmsl);
         XPLMDrawString(color, left + 5, top - 40, buf, 0, xplmFont_Basic);
-        sprintf(buf, "Draw: %10.3f,%10.3f,%10.3f %6.1f\xC2\xB0 %s", a->drawinfo.x, a->drawinfo.y, a->drawinfo.z, a->drawinfo.heading, a->is_drawn ? "" : "*");
+        sprintf(buf, "Draw: %10.3f,%10.3f,%10.3f %6.1f\xC2\xB0 %s", a->drawinfo.x, a->drawinfo.y, a->drawinfo.z, a->drawinfo.heading, indrawrange(a->drawinfo.x - view_x, a->drawinfo.z - view_z) ? "" : "*");
         XPLMDrawString(color, left + 5, top - 50, buf, 0, xplmFont_Basic);
         top-=60;
         a=a->next;
@@ -631,19 +597,6 @@ static void menuhandler(void *inMenuRef, void *inItemRef)
 {
     switch ((intptr_t) inItemRef)
     {
-    case 0:
-        do_reflections=!do_reflections;
-        XPLMCheckMenuItem(my_menu_id, 0, do_reflections ? xplm_Menu_Checked : xplm_Menu_Unchecked);
-        XPLMEnableFeature("XPLM_WANTS_REFLECTIONS", do_reflections);
-        if (do_reflections)
-        {
-            XPLMRegisterDrawCallback(drawwakes, xplm_Phase_Objects, 0, NULL);	/* After other 3D objects */
-        }
-        else
-        {
-            XPLMUnregisterDrawCallback(drawwakes, xplm_Phase_Objects, 0, NULL);
-        }
-        break;
 #ifdef DO_LOCAL_MAP
     case 1:
         do_local_map=!do_local_map;
@@ -864,16 +817,9 @@ PLUGIN_API void XPluginReceiveMessage(XPLMPluginID inFrom, long inMessage, void 
             /* Finish setup */
             my_menu_index = XPLMAppendMenuItem(XPLMFindPluginsMenu(), "SeaTraffic", NULL, 1);
             my_menu_id = XPLMCreateMenu("SeaTraffic", XPLMFindPluginsMenu(), my_menu_index, menuhandler, NULL);
-            XPLMRegisterDrawCallback(drawships, xplm_Phase_Objects, 1, NULL);		/* Before other 3D objects */
 
-            /* Setup reflections & wakes */
-            XPLMAppendMenuItem(my_menu_id, "Draw reflections and wakes", (void*) 0, 0);
-            XPLMCheckMenuItem(my_menu_id, 0, do_reflections ? xplm_Menu_Checked : xplm_Menu_Unchecked);
-            if (do_reflections)
-            {
-                XPLMEnableFeature("XPLM_WANTS_REFLECTIONS", 1);
-                XPLMRegisterDrawCallback(drawwakes, xplm_Phase_Objects, 0, NULL);	/* After other 3D objects */
-            }
+            XPLMEnableFeature("XPLM_WANTS_REFLECTIONS", 1);
+            XPLMRegisterDrawCallback(drawships, xplm_Phase_Objects, 1, NULL);		/* Before other 3D objects */
 
 #ifdef DO_LOCAL_MAP
             /* Setup local map */
