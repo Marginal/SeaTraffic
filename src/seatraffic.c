@@ -654,9 +654,9 @@ static void menuhandler(void *inMenuRef, void *inItemRef)
     switch ((intptr_t) inItemRef)
     {
 #ifdef DO_LOCAL_MAP
-    case 1:
+    case menu_idx_local_map:
         do_local_map=!do_local_map;
-        XPLMCheckMenuItem(my_menu_id, 1, do_local_map ? xplm_Menu_Checked : xplm_Menu_Unchecked);
+        XPLMCheckMenuItem(my_menu_id, menu_idx_local_map, do_local_map ? xplm_Menu_Checked : xplm_Menu_Unchecked);
         if (do_local_map)
         {
             XPLMRegisterDrawCallback(drawmap3d, xplm_Phase_LocalMap3D, 0, NULL);
@@ -871,17 +871,17 @@ PLUGIN_API void XPluginReceiveMessage(XPLMPluginID inFrom, long inMessage, void 
             }
 
             /* Finish setup */
-            my_menu_index = XPLMAppendMenuItem(XPLMFindPluginsMenu(), "SeaTraffic", NULL, 1);
-            my_menu_id = XPLMCreateMenu("SeaTraffic", XPLMFindPluginsMenu(), my_menu_index, menuhandler, NULL);
-
             ref_renopt = XPLMFindDataRef("sim/private/controls/reno/draw_objs_06");	/* v10+ */
             XPLMEnableFeature("XPLM_WANTS_REFLECTIONS", 1);
             XPLMRegisterDrawCallback(drawships, xplm_Phase_Objects, 1, NULL);		/* Before other 3D objects */
 
+            my_menu_index = XPLMAppendMenuItem(XPLMFindPluginsMenu(), "SeaTraffic", NULL, 1);
+            my_menu_id = XPLMCreateMenu("SeaTraffic", XPLMFindPluginsMenu(), my_menu_index, menuhandler, NULL);
+            /* Menu items must be added in order of menu_idx enum */
 #ifdef DO_LOCAL_MAP
             /* Setup local map */
-            XPLMAppendMenuItem(my_menu_id, "Draw routes in Local Map", (void*) 1, 0);
-            XPLMCheckMenuItem(my_menu_id, 1, do_local_map ? xplm_Menu_Checked : xplm_Menu_Unchecked);
+            XPLMAppendMenuItem(my_menu_id, "Draw routes in Local Map", (void*) menu_idx_local_map, 0);
+            XPLMCheckMenuItem(my_menu_id, menu_idx_local_map, do_local_map ? xplm_Menu_Checked : xplm_Menu_Unchecked);
             if (do_local_map)
             {
                 XPLMRegisterDrawCallback(drawmap3d, xplm_Phase_LocalMap3D, 0, NULL);

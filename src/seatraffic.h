@@ -66,6 +66,10 @@
 
 /* rendering options */
 #define DO_LOCAL_MAP
+enum
+{
+    menu_idx_local_map
+} menu_idx;
 #ifdef DEBUG
 #  define DO_ACTIVE_LIST
 #endif
