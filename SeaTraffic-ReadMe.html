@@ -56,17 +56,25 @@ h5 { font-family: Arial,Helvetica,sans-serif; }
 </ul>
 
 <h3>Options</h3>
-<p>If the plugin is installed correctly, you will see a "SeaTraffic" entry in X-Plane's <samp>Plugins</samp> menu. This offers one option:</p>
-<dl>
-  <dt>Draw routes in Local Map</dt>
-  <dd>Controls whether routes and current ship positions are drawn in X-Plane's <samp>Location &rarr; Local&nbsp;Map</samp>.</dd>
+<p>If the plugin is installed correctly, you will see a <samp>SeaTraffic</samp> entry in X-Plane&rsquo;s <samp>Plugins</samp> menu. This offers one option:</p>
+<dl style="margin-left: 40px;">
+  <dt><samp>Draw routes in Local Map</samp></dt>
+  <dd>Controls whether routes and current ship positions are shown in X-Plane&rsquo;s <samp>Location&nbsp;&rarr; Local&nbsp;Map</samp>.</dd>
 </dl>
-
+<p>The plugin obeys the following settings in X-Plane&rsquo;s <samp>Settings&nbsp;&rarr; Rendering&nbsp;Options</samp>:</p>
+<dl style="margin-left: 40px;">
+  <dt><samp>number of objects</samp></dt>
+  <dd>Controls the maximum number of ships.</dd>
+  <dt><samp>shadow detail</samp> <small>(X-Plane 10 or later)</small></dt>
+  <dd>Ships are shown with shadows when this is set to &ldquo;global&nbsp;(low)&rdquo; or above.</dd>
+  <dt><samp>water reflection detail</samp></dt>
+  <dd>Ships are shown with reflections and wakes when this is set to &ldquo;medium&rdquo; or above.</dd>
+</dl>
 <hr>
 
 <h3>Adding / modifying routes</h3>
-<p>This plugin uses ferry routes extracted from the <a target="_blank" href="http://www.openstreetmap.org/">OpenStreetMap</a> project. If you find that a ferry route is missing or incorrect you can <a target="_blank" href="http://www.openstreetmap.org/user/new">sign up</a> to the project and add or modify the route. Start by reading the Beginners' guide and other info on the <a target="_blank" href="http://wiki.openstreetmap.org">Main Page</a>.</p>
-<p>The OpenStreetMap "way" tags for creating a ferry route are described <a target="_blank" href="http://wiki.openstreetmap.org/wiki/Tag:route%3Dferry">here</a> and <a target="_blank" href="http://wiki.openstreetmap.org/wiki/Proposed_features/ferry#cruise_ships.2C_cruise_ferries.2C_express_boats">here</a>. This plugin decides which type of ship to send along a ferry route based on the following tags:<p>
+<p>This plugin uses ferry routes extracted from the <a target="_blank" href="http://www.openstreetmap.org/">OpenStreetMap</a> project. If you find that a ferry route is missing or incorrect you can <a target="_blank" href="http://www.openstreetmap.org/user/new">sign up</a> to the project and add or modify the route. Start by reading the Beginners&rsquo; guide and other info on the <a target="_blank" href="http://wiki.openstreetmap.org">Main Page</a>.</p>
+<p>The OpenStreetMap &ldquo;way&rdquo; tags for creating a ferry route are described <a target="_blank" href="http://wiki.openstreetmap.org/wiki/Tag:route%3Dferry">here</a> and <a target="_blank" href="http://wiki.openstreetmap.org/wiki/Proposed_features/ferry#cruise_ships.2C_cruise_ferries.2C_express_boats">here</a>. This plugin decides which type of ship to send along a ferry route based on the following tags:<p>
 <ul>
   <li><tt><a target="_blank" href="http://wiki.openstreetmap.org/wiki/Tag:route%3Dferry">route</a> = ferry</tt></li>
   <li><tt>name = <i>route name</i></tt></li>
@@ -81,10 +89,10 @@ h5 { font-family: Arial,Helvetica,sans-serif; }
 </ul>
 
 <h4>Getting your new / modified route into X-Plane</h4>
-<p>This plugin doesn't read ferry routes directly from the OpenStreetMap servers (that would be too slow). Instead, it contains a pre-computed database of routes. In order to visualise your new or modified ferry route(s) in X-Plane you can either:</p>
+<p>This plugin doesn&rsquo;t read ferry routes directly from the OpenStreetMap servers (that would be too slow). Instead, it contains a pre-computed database of routes. In order to visualise your new or modified ferry route(s) in X-Plane you can either:</p>
 <ul>
   <li>wait for the <a href="mailto:x-plane@marginal.org.uk">author</a> to release a new version of the plugin, or</li>
-  <li>wait about an hour for your edits to appear on the OpenStreetMap servers, then re-generate the plugin's database by running the script <code>X-Plane/Resources/plugins/SeaTraffic/buildroutes.py</code> <small>(Windows users must install <a href="http://www.python.org/ftp/python/2.7.3/python-2.7.3.msi">Python 2.x</a> in order to run this script)</small>.</li>
+  <li>wait about an hour for your edits to appear on the OpenStreetMap servers, then re-generate the plugin&rsquo;s database by running the script <code>X-Plane/Resources/plugins/SeaTraffic/buildroutes.py</code> <small>(Windows users must install <a href="http://www.python.org/ftp/python/2.7.3/python-2.7.3.msi">Python 2.x</a> in order to run this script)</small>.</li>
 </ul>
 
 <hr>
