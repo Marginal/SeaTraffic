@@ -2,7 +2,7 @@
 
 include ../version.mak
 
-XPSDK=../../XPSDK212
+XPSDK=../../XPSDK213
 
 CC=gcc
 #BUILD=-g -DDEBUG
@@ -39,7 +39,7 @@ install:	$(TARGET)
 	$(CP) $(TARGET) ~/Desktop/X-Plane\ 10/Resources/plugins/$(PROJECT)/
 
 $(TARGET):	$(OBJS)| $(TARGETDIR)
-	$(CC) $(CFLAGS) $(LDFLAGS) $(LIBS) -o $@ $+
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $+ $(LIBS)
 
 $(OBJS): | $(BUILDDIR)
 
