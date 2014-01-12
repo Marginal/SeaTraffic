@@ -210,7 +210,7 @@ if True:
     bbox=''
     #bbox='(50.5,1,51.5,2)'	# limit to Dover/Calais area for testing
     print "Querying %s - this will take a while" % server
-    h=urlopen('%s?data=[timeout:%d];(way[route~"^ferry$|^cruise$"]%s;>;);out;' % (server, timeout, bbox), timeout=timeout)
+    h=urlopen('%s?data=[timeout:%d];(way[route~"^ferry$|^cruise$"][bridge!~"."]%s;>;);out;' % (server, timeout, bbox), timeout=timeout)
     print "Downloading results"
     data=h.read()
     h.close()
@@ -218,7 +218,7 @@ if True:
     h.write(data)
     h.close()
 else:
-    # use an existing file instead, obtained with: wget -S -T0 -O routes.osm 'http://overpass-api.de/api/interpreter?data=[timeout:1800];(way[route~"^ferry$|^cruise$"];>;);out;'
+    # use an existing file instead, obtained with: wget -S -T0 -O routes.osm 'http://overpass-api.de/api/interpreter?data=[timeout:1800];(way[route~"^ferry$|^cruise$"][bridge!~"."];>;);out;'
     h=open('routes.osm')	
     data=h.read()
     h.close()
@@ -248,6 +248,8 @@ LENGTH_HGV=20000	# assume it's a hgv ferry over 20km
 # Process ##############################################################
 
 # look for ways that share nodes
+# this code assumes that we have no extraneous nodes - i.e. nodes that link to a way not in 'ways' - so filter out any
+# unwanted ways in the original OSM query
 nways=len(ways)
 nmerged=nforked=nmess=0
 for node in nodes.itervalues():
