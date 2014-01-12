@@ -53,14 +53,14 @@
 import codecs
 from operator import attrgetter
 from math import acos, cos, sin, radians
+from sys import exit
 from urllib2 import urlopen
 from xml.parsers.expat import ParserCreate
 
-# http://wiki.openstreetmap.org/wiki/Xapi
-#server='http://jxapi.openstreetmap.org/xapi/api/0.6/'	- down
-#server='http://open.mapquestapi.com/xapi/api/0.6/'	- no good
-server='http://www.overpass-api.de/api/xapi?'
-#server='http://overpass.osm.rambler.ru/cgi/xapi?'
+# http://wiki.openstreetmap.org/wiki/Overpass_API
+server='http://overpass-api.de/api/interpreter'
+
+timeout=1800	# server and client timout [s]
 
 radius=6378145	# from sim/physics/earth_radius_m
 
@@ -208,16 +208,17 @@ class Parser:
 
 if True:
     bbox=''
-    #bbox='[bbox=1,50.5,2,51.5]'	# for testing
-    print "Reading from server", server
-    h=urlopen(server+'way[route=ferry|cruise]'+bbox)
+    #bbox='(50.5,1,51.5,2)'	# limit to Dover/Calais area for testing
+    print "Querying %s - this will take a while" % server
+    h=urlopen('%s?data=[timeout:%d];(way[route~"^ferry$|^cruise$"]%s;>;);out;' % (server, timeout, bbox), timeout=timeout)
+    print "Downloading results"
     data=h.read()
     h.close()
     h=open('routes.osm', 'w')		# dump XML for analysis
     h.write(data)
     h.close()
 else:
-    # use a file instead, obtained with: wget -S "http://www.overpass-api.de/api/xapi?way[route=ferry|cruise]" -O routes.osm
+    # use an existing file instead, obtained with: wget -S -T0 -O routes.osm 'http://overpass-api.de/api/interpreter?data=[timeout:1800];(way[route~"^ferry$|^cruise$"];>;);out;'
     h=open('routes.osm')	
     data=h.read()
     h.close()
@@ -228,6 +229,9 @@ ways=[]		# List so sort is stable
 
 parser=Parser()
 parser.parse(data)
+if not ways:
+    print "Query failed!"
+    exit(1)
 
 # Dump raw data for analysis - open in Excel with Data->Import or Data->Get External Data
 h=codecs.open('routes.csv', 'wt', 'utf-8')
