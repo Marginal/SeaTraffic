@@ -120,24 +120,25 @@ typedef struct
 /* A route from routes.txt */
 typedef struct
 {
+    loc_t *path;
 #if defined(DO_LOCAL_MAP) || defined(DO_ACTIVE_LIST)
     char *name;
 #endif
     ship_kind_t ship_kind;
     unsigned short pathlen;
-    loc_t *path;
 } route_t;
 
 /* List of routes */
 typedef struct route_list_t
 {
-    route_t *route;
     struct route_list_t *next;
+    route_t *route;
 } route_list_t;
 
 /* An active route */
 typedef struct active_route_t
 {
+    struct active_route_t *next;
     ship_t *ship;		/* Ship description */
     route_t *route;		/* The route it's on */
     int direction;		/* Traversing path 1=forwards, -1=reverse */
@@ -154,7 +155,6 @@ typedef struct active_route_t
 #ifdef DO_LOCAL_MAP
     int mapx, mapy;		/* position in local map */
 #endif
-    struct active_route_t *next;
 } active_route_t;
 
 
