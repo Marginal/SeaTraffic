@@ -234,7 +234,7 @@ if not ways:
     exit(1)
 
 # Dump raw data for analysis - open in Excel with Data->Import or Data->Get External Data
-h=codecs.open('routes.csv', 'wt', 'utf-8')
+h=codecs.open('routes.csv', 'w', 'utf-8')
 for way in ways:
     h.write('%d, "%s", %d, car=%s hgv=%s cruise=%s\n' % (way.id, way.name, way.length, way.car, way.hgv, way.cruise))
 h.close()
@@ -336,7 +336,7 @@ sortedways=sorted(filter(lambda w: w.length>=LENGTH_CUTOFF, ways), key=attrgette
 print("%d OSM Ways, of which %d were merged, %d rejected forks, %d too small.\nResulting in %d routes, %d of which are a mess." % (nways, nmerged, nforked, len(ways)-len(sortedways), len(sortedways), nmess))
 
 
-h=codecs.open('routes.txt', 'wt', 'utf-8')
+h=codecs.open('routes.txt', 'w', 'utf-8')
 h.write(u'\uFEFF# OSM export %s\n# Map data \u00A9 OpenStreetMap contributors - http://www.openstreetmap.org/, licensed under ODbL - http://opendatacommons.org/licenses/odbl/\n\n' % datadate)	# start with BOM to signify this is utf-8
 for way in sortedways:
     if way.cruise is True:
