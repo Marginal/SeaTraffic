@@ -1,6 +1,7 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 #
-# Build maritime routes, categorised by traffic type = [ tourist | foot | car | hgv | cruise | leisure | cargo | tanker | mil ]
+# Build maritime routes, categorised by traffic type = [ tourist | foot | crossing | car | hgv | cruise | leisure | cargo | tanker | mil ]
 #
 # Top-level documentation: http://wiki.openstreetmap.org/wiki/Marine_navigation and http://wiki.openstreetmap.org/wiki/Marine_Mapping
 #
@@ -131,18 +132,20 @@ class Parser:
         self.parser.Parse(data)
 
     def OSMbool(self, value):
-        # http://thedailywtf.com/Articles/What_Is_Truth_0x3f_.aspx
+        # http://wiki.openstreetmap.org/wiki/Key:access
         if value in ['yes', 'permissive', 'pemissive', 'designated', 'motor_vehicle']:	# sheesh
             return True
-        elif value in ['no', 'private']:
+        elif value in ['no', 'private', 'delivery', 'official']:
             return False
+        elif value in ['unknown']:
+            return None		# http://thedailywtf.com/Articles/What_Is_Truth_0x3f_.aspx
         else:
             try:
                 int(value)	# e.g. <tag k="foot" v="50"/>
+                return True
             except:
-                assert value in ['unknown', 'delivery'], value	# fail on random crud so we can decide what to do with it
-                return None
-            return True
+                assert False, value	# fail on random crud so we can decide what to do with it
+                return False
 
     def startelement(self, name, attributes):
         if name=='node':
@@ -171,9 +174,7 @@ class Parser:
                 self.currentway.name+=(" #"+value)	# relies on tags being alphabetically sorted so that ref comes after name
             elif tag=='hgv':
                 self.currentway.hgv=self.OSMbool(value)
-            elif tag=='motorcar':
-                self.currentway.car=self.OSMbool(value)
-            elif tag=='motor_vehicle':	# note not in http://wiki.openstreetmap.org/wiki/Tag:route%3Dferry
+            elif tag in ['motorcar', 'motor_vehicle']:
                 self.currentway.car=self.OSMbool(value)
             elif tag=='foot':
                 self.currentway.foot=self.OSMbool(value)
@@ -241,8 +242,9 @@ h.close()
 
 # arbitrary constants
 LENGTH_CUTOFF=100	# want to allow eg Woolwich ferry and Glastonbury-Rocky Hill
-LENGTH_CAR=10000	# assume it's a car ferry over 10km
-LENGTH_HGV=20000	# assume it's a hgv ferry over 20km
+LENGTH_CROSSING=5000	# assume car and/or hgv access is a river/lake crossing under 5km (e.g. François Lake Ferry=3km)
+LENGTH_CAR=10000	# assume unspecified access is a car ferry over 10km
+LENGTH_HGV=20000	# assume unspecified access is a hgv ferry over 20km
 
 
 # Process ##############################################################
@@ -344,10 +346,16 @@ for way in sortedways:
     elif way.tourist is True:
         ferrytype='tourist'
     elif way.hgv is True:
-        ferrytype='hgv'
+        if way.length>=LENGTH_CROSSING:
+            ferrytype='hgv'
+        else:
+            ferrytype='crossing'
     elif way.hgv is False:
         if way.car is True:
-            ferrytype='car'
+            if way.length>=LENGTH_CROSSING:
+                ferrytype='car'
+            else:
+                ferrytype='crossing'
         elif way.car is False:
             ferrytype='foot'
         elif way.length>=LENGTH_CAR:
@@ -356,7 +364,10 @@ for way in sortedways:
             ferrytype='foot'
     else:	# hgv unknown
         if way.car is True:
-            ferrytype='car'	# if car is specified but hgv not, then assume it's not hgv
+            if way.length>=LENGTH_CROSSING:
+                ferrytype='car'	# if car is specified but hgv not, then assume it's not hgv
+            else:
+                ferrytype='crossing'
         elif way.car is False:
             ferrytype='foot'	# ditto
         elif way.foot is True:

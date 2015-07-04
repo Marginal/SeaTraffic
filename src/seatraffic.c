@@ -20,14 +20,15 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD ul_reason, LPVOID lpReserved)
 /* Globals */
 static char mypath[PATH_MAX], *relpath;
 
-const char *shiptokens[ship_kind_count] = { "", "tourist", "foot", "car", "hgv", "cruise", "leisure", "cargo", "tanker" };	/* order must match ship_kind_t enum */
+const char *shiptokens[ship_kind_count] = { "", "tourist", "foot", "crossing", "car", "hgv", "cruise", "leisure", "cargo", "tanker" };	/* order must match ship_kind_t enum */
 
 static ship_t ships[ship_kind_count] =
 {
-    /* speed, semilen */
+    /* speed [m/s], semilen [m] */
     { 0 },
     {  3, 15 },	/* tourist,  ~6   knots */
     { 16, 21 },	/* foot,    ~31   knots */
+    {  6, 30 },	/* crossing ~11.5 knots */
     { 11, 76 },	/* car,     ~21.5 knots */
     { 10, 76 },	/* hgv,     ~19.5 knots */
     { 12, 80 },	/* cruise,  ~23.5 knots */
@@ -43,6 +44,7 @@ static const ship_object_t ship_objects[] =
     { foot,	"Damen_4212_Green.obj" },
     { foot,	"Damen_4212_Orange.obj" },
     { foot,	"Damen_4212_Sky.obj" },
+    { crossing,	"River_crossing.obj" },
     { car,	"opensceneryx/objects/vehicles/boats_ships/ferries.obj" },
     { hgv,	"opensceneryx/objects/vehicles/boats_ships/ferries.obj" },
     { cruise,	"opensceneryx/objects/vehicles/boats_ships/cruise.obj" },
@@ -495,11 +497,11 @@ static int drawships(XPLMDrawingPhase inPhase, int inIsBefore, void *inRefcon)
             glPolygonOffset(-2,-2);
 
             for (a=active_routes; a; a=a->next)
-                if ((a->ship->speed >= 7) &&			/* Only draw wakes for ships going at speed */
+                if ((a->ship->speed >= WAKE_MINSPEED) &&	/* Only draw wakes for ships going at speed */
                     (a->last_node+a->direction >= 0) && (a->last_node+a->direction < a->route->pathlen) &&	/* and not lingering */
                     inwakerange(a->drawinfo.x - view_x, a->drawinfo.z - view_z))				/* and closeish */
                 {
-                    XPLMDrawObjects(a->ship->semilen >= 40 ? wake_big_ref : wake_med_ref, 1, &(a->drawinfo), 0, 1);
+                    XPLMDrawObjects(a->ship->semilen >= WAKE_LARGE ? wake_big_ref : wake_med_ref, 1, &(a->drawinfo), 0, 1);
                 }
             glDisable(GL_POLYGON_OFFSET_FILL);
         }
