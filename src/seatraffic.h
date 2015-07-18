@@ -63,8 +63,9 @@
 #define LINGER_TIME 300.0f	/* How long should ships hang around at the dock at the end of their route [s] */
 #define SHIP_SPACING 8		/* Try to space ships out by this many times their semilen */
 #define RADIUS 6378145.f	/* from sim/physics/earth_radius_m [m] */
-#define WAKE_MINSPEED 7		/* Only draw wakes for ships going this fast [m/s] */
-#define WAKE_LARGE 40		/* Draw large wake for ships this large (semilen) [m] */
+#define WAKE_MINSPEED 5		/* Only draw wakes for ships going this fast [m/s] */
+#define WAKE_MED 20		/* Draw medium wake for ships this large (semilen) [m] */
+#define WAKE_BIG 40		/* Draw large  wake for ships this large (semilen) [m] */
 
 /* rendering options */
 #define DO_LOCAL_MAP
@@ -81,7 +82,7 @@ enum
 /* Kinds of ships we recognise */
 typedef enum	/* use -fshort-enums with gcc */
 {
-    none=0, tourist, foot, crossing, car, hgv, cruise, leisure, cargo, tanker, mil,
+    none=0, leisure, tourist, cruise, ped_sml, ped_med, veh_sml, veh_med, veh_big, cargo, tanker, mil,
     ship_kind_count
 } ship_kind_t;
 

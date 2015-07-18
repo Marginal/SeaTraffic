@@ -1,17 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Build maritime routes, categorised by traffic type = [ tourist | foot | crossing | car | hgv | cruise | leisure | cargo | tanker | mil ]
+# Build maritime routes, categorised by traffic type = [ leisure | tourist | cruise | ped/sml | ped/med | veh/sml | veh/med | veh/big | cargo | tanker | mil ]
 #
 # Top-level documentation: http://wiki.openstreetmap.org/wiki/Marine_navigation and http://wiki.openstreetmap.org/wiki/Marine_Mapping
 #
-# Primary way tags for foot | car | hgv :
+# Primary way tags for ped/* and veh/* :
 #   route = ferry
 #   name = <name>
 #   ref = <line number/route code if applicable>
-#   foot = yes|no
-#   motorcar = yes|no
+#   motor_vehicle = yes|no
 #   hgv = yes|no
+#   motorcar = yes|no
+#   foot = yes|no
 # See http://wiki.openstreetmap.org/wiki/Tag:route=ferry
 #
 # Primary way tags for tourist :
@@ -99,6 +100,7 @@ class Way:
         self.cruise=None
         self.hgv=None
         self.car=None
+        self.vehicle=None
         self.foot=None
         self.tourist=None
 
@@ -133,9 +135,9 @@ class Parser:
 
     def OSMbool(self, value):
         # http://wiki.openstreetmap.org/wiki/Key:access
-        if value in ['yes', 'permissive', 'pemissive', 'designated', 'motor_vehicle']:	# sheesh
+        if value in ['yes', 'permissive', 'designated', 'private', 'official']:
             return True
-        elif value in ['no', 'private', 'delivery', 'official']:
+        elif value in ['no', 'delivery']:
             return False
         elif value in ['unknown']:
             return None		# http://thedailywtf.com/Articles/What_Is_Truth_0x3f_.aspx
@@ -174,8 +176,10 @@ class Parser:
                 self.currentway.name+=(" #"+value)	# relies on tags being alphabetically sorted so that ref comes after name
             elif tag=='hgv':
                 self.currentway.hgv=self.OSMbool(value)
-            elif tag in ['motorcar', 'motor_vehicle']:
+            elif tag=='motorcar':
                 self.currentway.car=self.OSMbool(value)
+            elif tag=='motor_vehicle':
+                self.currentway.vehicle=self.OSMbool(value)
             elif tag=='foot':
                 self.currentway.foot=self.OSMbool(value)
             elif tag=='ferry':
@@ -186,11 +190,11 @@ class Parser:
                     self.currentway.tourist=True
                 elif value in ['trunk', 'primary', 'secondary']:
                     if self.currentway.hgv is not False: self.currentway.hgv=True
-                    if self.currentway.car is not False: self.currentway.car=True
-                    if self.currentway.foot is not False: self.currentway.foot=True
-                elif value in ['local', 'tertiary', 'express_boat']:
+                elif value in ['tertiary']:
                     if self.currentway.hgv is not True: self.currentway.hgv=False
-                    if self.currentway.car is not True: self.currentway.car=False
+                    if self.currentway.car is not False: self.currentway.car=True
+                elif value in ['local','express_boat']:
+                    if self.currentway.vehicle is not True: self.currentway.vehicle=False
                     if self.currentway.foot is not False: self.currentway.foot=True
             elif tag=='route':
                 if value=='cruise':
@@ -236,15 +240,17 @@ if not ways:
 
 # Dump raw data for analysis - open in Excel with Data->Import or Data->Get External Data
 h=codecs.open('routes.csv', 'w', 'utf-8')
+h.write('way,name,length,vehicle,hgv,car,foot,cruise,tourist\n')
 for way in ways:
-    h.write('%d, "%s", %d, car=%s hgv=%s cruise=%s\n' % (way.id, way.name, way.length, way.car, way.hgv, way.cruise))
+    h.write('%d,"%s",%d,%s,%s,%s,%s,%s,%s\n' % ((way.id, way.name.replace('"', '""'), way.length) + tuple(['' if x is None else x for x in way.vehicle, way.hgv, way.car, way.foot, way.cruise, way.tourist])))
 h.close()
 
 # arbitrary constants
-LENGTH_CUTOFF=100	# want to allow eg Woolwich ferry and Glastonbury-Rocky Hill
-LENGTH_CROSSING=5000	# assume car and/or hgv access is a river/lake crossing under 5km (e.g. François Lake Ferry=3km)
-LENGTH_CAR=10000	# assume unspecified access is a car ferry over 10km
-LENGTH_HGV=20000	# assume unspecified access is a hgv ferry over 20km
+LENGTH_CUTOFF=50	# want to allow eg Woolwich ferry and Glastonbury-Rocky Hill
+LENGTH_PED_MED=2000	# assume foot-only access over this length is a medium-sized boat
+LENGTH_VEH_MED=2000	# assume coastal or inland (e.g. François Lake Ferry=3km)
+LENGTH_VEH_BIG=20000	# assume seagoing over 20km
+LENGTH_UNK_PED=500	# assume unspecified is foot-only under this length
 
 
 # Process ##############################################################
@@ -313,6 +319,7 @@ for node in nodes.itervalues():
 
         # we merged wayi into way0 - fix things up
         if wayi.cruise: way0.cruise=True
+        if wayi.vehicle: way0.vehicle=True
         if wayi.hgv: way0.hgv=True
         if wayi.car: way0.car=True
         if wayi.foot: way0.foot=True
@@ -341,43 +348,45 @@ print("%d OSM Ways, of which %d were merged, %d rejected forks, %d too small.\nR
 h=codecs.open('routes.txt', 'w', 'utf-8')
 h.write(u'\uFEFF# OSM export %s\n# Map data \u00A9 OpenStreetMap contributors - http://www.openstreetmap.org/, licensed under ODbL - http://opendatacommons.org/licenses/odbl/\n\n' % datadate)	# start with BOM to signify this is utf-8
 for way in sortedways:
-    if way.cruise is True:
+
+    if way.cruise:
         ferrytype='cruise'
-    elif way.tourist is True:
+    elif way.tourist:
         ferrytype='tourist'
-    elif way.hgv is True:
-        if way.length>=LENGTH_CROSSING:
-            ferrytype='hgv'
+    elif (way.foot and not (way.vehicle or way.hgv or way.car)) or way.vehicle is False:
+        if way.length>=LENGTH_PED_MED:
+            ferrytype='ped/med'
         else:
-            ferrytype='crossing'
-    elif way.hgv is False:
-        if way.car is True:
-            if way.length>=LENGTH_CROSSING:
-                ferrytype='car'
-            else:
-                ferrytype='crossing'
-        elif way.car is False:
-            ferrytype='foot'
-        elif way.length>=LENGTH_CAR:
-            ferrytype='car'
+            ferrytype='ped/sml'
+    elif way.hgv:	# HGV explicitly allowed - don't use small ferry
+        if way.length>=LENGTH_VEH_BIG:
+            ferrytype='veh/big'
         else:
-            ferrytype='foot'
-    else:	# hgv unknown
-        if way.car is True:
-            if way.length>=LENGTH_CROSSING:
-                ferrytype='car'	# if car is specified but hgv not, then assume it's not hgv
-            else:
-                ferrytype='crossing'
-        elif way.car is False:
-            ferrytype='foot'	# ditto
-        elif way.foot is True:
-            ferrytype='foot'	# if foot is specified but hgv and car not, then assume it's foot only
-        elif way.length>=LENGTH_HGV:
-            ferrytype='hgv'
-        elif way.length>=LENGTH_CAR:
-            ferrytype='car'
+            ferrytype='veh/med'
+    elif way.hgv is False or (way.car and not way.hgv):	# HGV explicitly or implicitly denied - don't use big ferry
+        if way.length>=LENGTH_VEH_MED:
+            ferrytype='veh/med'
         else:
-            ferrytype='foot'
+            ferrytype='veh/sml'
+    elif way.vehicle or way.foot is False:
+        if way.length>=LENGTH_VEH_BIG:
+            ferrytype='veh/big'
+        elif way.length>=LENGTH_VEH_MED:
+            ferrytype='veh/med'
+        else:
+            ferrytype='veh/sml'
+    else:
+        # No access specified - roughly 50% of cases
+        assert way.vehicle is None and way.hgv is None and way.car is None and way.foot is None, way.id
+        if way.length>=LENGTH_VEH_BIG:
+            ferrytype='veh/big'
+        elif way.length>=LENGTH_VEH_MED:
+            ferrytype='veh/med'
+        elif way.length>=LENGTH_UNK_PED:
+            ferrytype='veh/sml'
+        else:
+            ferrytype='ped/sml'
+
     h.write('%s\t%s\n' % (ferrytype, way.name))
     for node in way.nodes:
         h.write('%s\n' % node)

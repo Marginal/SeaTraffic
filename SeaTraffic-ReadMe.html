@@ -74,20 +74,21 @@ h5 { font-family: Arial,Helvetica,sans-serif; }
 
 <h3>Adding / modifying routes</h3>
 <p>This plugin uses ferry routes extracted from the <a target="_blank" href="http://www.openstreetmap.org/">OpenStreetMap</a> project. If you find that a ferry route is missing or incorrect you can <a target="_blank" href="http://www.openstreetmap.org/user/new">sign up</a> to the project and add or modify the route. Start by reading the Beginners&rsquo; guide and other info on the <a target="_blank" href="http://wiki.openstreetmap.org">Main Page</a>.</p>
-<p>The OpenStreetMap &ldquo;way&rdquo; tags for creating a ferry route are described <a target="_blank" href="http://wiki.openstreetmap.org/wiki/Tag:route%3Dferry">here</a> and <a target="_blank" href="http://wiki.openstreetmap.org/wiki/Proposed_features/ferry#cruise_ships.2C_cruise_ferries.2C_express_boats">here</a>. This plugin decides which type of ship to send along a ferry route based on the following tags:<p>
+<p>The OpenStreetMap &ldquo;way&rdquo; tags for creating a ferry route are described <a target="_blank" href="http://wiki.openstreetmap.org/wiki/Tag:route%3Dferry">here</a> and <a target="_blank" href="http://wiki.openstreetmap.org/wiki/Proposed_features/ferry#cruise_ships.2C_cruise_ferries.2C_express_boats">here</a>. This plugin uses these tags to choose which type of ship to display. At minimum you should set the following tags:</p>
 <ul>
   <li><tt><a target="_blank" href="http://wiki.openstreetmap.org/wiki/Tag:route%3Dferry">route</a> = ferry</tt></li>
   <li><tt>name = <i>route name</i></tt></li>
   <li><tt>ref = <i>line number or route code</i> </tt><small>(if applicable)</small></li>
-  <li><tt>foot = yes / no</tt></li>
-  <li><tt>motorcar = yes / no</tt></li>
-  <li><tt>hgv = yes / no</tt></li>
+  <li><tt>motor_vehicle = yes / no</tt></li>
 </ul>
-<p>This plugin recognises tourist boat routes and cruise ship lines by the following additional tag:</p>
+<p>You can further specify the type and size of ship with the following tags:</p>
 <ul>
-  <li><tt><a target="_blank" href="http://wiki.openstreetmap.org/wiki/Proposed_features/ferry#cruise_ships.2C_cruise_ferries.2C_express_boats">ferry</a> = tourist / cruise</tt></li>
+  <li><tt><a target="_blank" href="http://wiki.openstreetmap.org/wiki/Proposed_features/ferry#cruise_ships.2C_cruise_ferries.2C_express_boats">ferry</a> = tourist / cruise</tt> <small>(if applicable)</small></li>
+  <li><tt>hgv = yes / no</tt></li>
+  <li><tt>motorcar = yes / no</tt></li>
+  <li><tt>foot = yes / no</tt></li>
 </ul>
-
+ 
 <h4>Getting your new / modified route into X-Plane</h4>
 <p>This plugin doesn&rsquo;t read ferry routes directly from the OpenStreetMap servers (that would be too slow). Instead, it contains a pre-computed database of routes. In order to visualise your new or modified ferry route(s) in X-Plane you can either:</p>
 <ul>

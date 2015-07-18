@@ -20,35 +20,40 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD ul_reason, LPVOID lpReserved)
 /* Globals */
 static char mypath[PATH_MAX], *relpath;
 
-const char *shiptokens[ship_kind_count] = { "", "tourist", "foot", "crossing", "car", "hgv", "cruise", "leisure", "cargo", "tanker" };	/* order must match ship_kind_t enum */
+const char *shiptokens[ship_kind_count] = { "", "leisure", "tourist", "cruise", "ped/sml", "ped/med", "veh/sml", "veh/med", "veh/big", "cargo", "tanker", "mil" };	/* order must match ship_kind_t enum */
 
 static ship_t ships[ship_kind_count] =
 {
     /* speed [m/s], semilen [m] */
     { 0 },
-    {  3, 15 },	/* tourist,  ~6   knots */
-    { 16, 21 },	/* foot,    ~31   knots */
-    {  6, 30 },	/* crossing ~11.5 knots */
-    { 11, 76 },	/* car,     ~21.5 knots */
-    { 10, 76 },	/* hgv,     ~19.5 knots */
-    { 12, 80 },	/* cruise,  ~23.5 knots */
     {  2,  8 },	/* leisure,  ~4   knots */
+    {  3, 15 },	/* tourist,  ~6   knots */
+    { 12, 80 },	/* cruise,  ~23.5 knots */
+    { 11, 11 },	/* ped_sml, ~21.5 knots */
+    { 16, 21 },	/* ped_med, ~31   knots */
+    {  5, 11 },	/* veh_sml   ~9.5 knots */
+    {  6, 30 },	/* veh_med, ~11.5 knots */
+    { 10, 76 },	/* veh_big, ~19.5 knots */
     {  8, 95 },	/* cargo,   ~15.5 knots */
     {  8,125 },	/* tanker,  ~15.5 knots */
 };
 
 static const ship_object_t ship_objects[] =
 {
-    { tourist,	"opensceneryx/objects/vehicles/boats_ships/tour.obj" },
-    { foot,	"Damen_4212_Blue.obj" },
-    { foot,	"Damen_4212_Green.obj" },
-    { foot,	"Damen_4212_Orange.obj" },
-    { foot,	"Damen_4212_Sky.obj" },
-    { crossing,	"River_crossing.obj" },
-    { car,	"opensceneryx/objects/vehicles/boats_ships/ferries.obj" },
-    { hgv,	"opensceneryx/objects/vehicles/boats_ships/ferries.obj" },
-    { cruise,	"opensceneryx/objects/vehicles/boats_ships/cruise.obj" },
     { leisure,	"opensceneryx/objects/vehicles/boats_ships/power.obj" },
+    { tourist,	"opensceneryx/objects/vehicles/boats_ships/tour.obj" },
+    { cruise,	"opensceneryx/objects/vehicles/boats_ships/cruise.obj" },
+    { ped_sml,	"Damen_2006_Green.obj" },
+    { ped_sml,	"Damen_2006_Red.obj" },
+    { ped_sml,	"Damen_2006_Sky.obj" },
+    { ped_sml,	"Damen_2006_White.obj" },
+    { ped_med,	"Damen_4212_Blue.obj" },
+    { ped_med,	"Damen_4212_Green.obj" },
+    { ped_med,	"Damen_4212_Orange.obj" },
+    { ped_med,	"Damen_4212_Sky.obj" },
+    { veh_sml,	"Damen_2010.obj" },
+    { veh_med,	"River_crossing.obj" },
+    { veh_big,	"opensceneryx/objects/vehicles/boats_ships/ferries.obj" },
     { cargo,	"opensceneryx/objects/vehicles/boats_ships/container.obj" },
     { tanker,	"Aframax_tanker_Black.obj" },
     { tanker,	"Aframax_tanker_Blue.obj" },
@@ -58,7 +63,7 @@ static const ship_object_t ship_objects[] =
 
 static XPLMDataRef ref_view_x, ref_view_y, ref_view_z, ref_view_h;
 static XPLMDataRef ref_plane_lat, ref_plane_lon, ref_night, ref_monotonic, ref_renopt=0, ref_rentype;
-static XPLMObjectRef wake_big_ref, wake_med_ref;
+static XPLMObjectRef wake_big_ref, wake_med_ref, wake_sml_ref;
 static float last_frame=0;		/* last time we recalculated */
 static int done_init=0, need_recalc=1;
 static tile_t current_tile={0,0};
@@ -501,7 +506,7 @@ static int drawships(XPLMDrawingPhase inPhase, int inIsBefore, void *inRefcon)
                     (a->last_node+a->direction >= 0) && (a->last_node+a->direction < a->route->pathlen) &&	/* and not lingering */
                     inwakerange(a->drawinfo.x - view_x, a->drawinfo.z - view_z))				/* and closeish */
                 {
-                    XPLMDrawObjects(a->ship->semilen >= WAKE_LARGE ? wake_big_ref : wake_med_ref, 1, &(a->drawinfo), 0, 1);
+                    XPLMDrawObjects(a->ship->semilen >= WAKE_BIG ? wake_big_ref : (a->ship->semilen >= WAKE_MED ? wake_med_ref : wake_sml_ref), 1, &(a->drawinfo), 0, 1);
                 }
             glDisable(GL_POLYGON_OFFSET_FILL);
         }
@@ -786,6 +791,9 @@ PLUGIN_API int XPluginStart(char *outName, char *outSignature, char *outDescript
     strcpy(buffer, relpath);
     strcat(buffer, "wake_med.obj");
     if (!(wake_med_ref=loadobject(buffer))) { return 0; }
+    strcpy(buffer, relpath);
+    strcat(buffer, "wake_sml.obj");
+    if (!(wake_sml_ref=loadobject(buffer))) { return 0; }
 
     if (!readroutes(mypath, outDescription)) { return failinit(outDescription); }	/* read routes.txt */
 
