@@ -89,7 +89,7 @@ int readroutes(char *mypath, char *err)
             }
             for (i=0; i<ship_kind_count; i++)
             {
-                if (!strcmp(c, shiptokens[i]))
+                if (!strcmp(c, ships[i].token))
                 {
                     currentroute->ship_kind=i;
                     break;

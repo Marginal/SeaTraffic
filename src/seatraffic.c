@@ -20,25 +20,33 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD ul_reason, LPVOID lpReserved)
 /* Globals */
 static char mypath[PATH_MAX], *relpath;
 
-const char *shiptokens[ship_kind_count] = { "", "leisure", "tourist", "cruise", "ped/sml", "ped/med", "veh/sml", "veh/med", "veh/big", "cargo", "tanker", "mil" };	/* order must match ship_kind_t enum */
-
-static ship_t ships[ship_kind_count] =
+/* Ship types. Order must match ship_kind_t enum */
+const ship_t ships[ship_kind_count] =
 {
-    /* speed [m/s], semilen [m] */
-    { 0 },
-    {  2,  8 },	/* leisure,  ~4   knots */
-    {  3, 15 },	/* tourist,  ~6   knots */
-    { 12, 80 },	/* cruise,  ~23.5 knots */
-    { 11, 11 },	/* ped_sml, ~21.5 knots */
-    { 16, 21 },	/* ped_med, ~31   knots */
-    {  5, 11 },	/* veh_sml   ~9.5 knots */
-    {  6, 30 },	/* veh_med, ~11.5 knots */
-    { 10, 76 },	/* veh_big, ~19.5 knots */
-    {  8, 95 },	/* cargo,   ~15.5 knots */
-    {  8,125 },	/* tanker,  ~15.5 knots */
+    /* speed [m/s], semilen [m], token */
+    {  2,  8, "leisure" },	/*  ~4   knots */
+    {  3, 15, "tourist" },	/*  ~6   knots */
+    { 12, 80, "cruise"  },	/* ~23.5 knots */
+    { 11, 11, "ped/sml" },	/* ~21.5 knots */
+    { 16, 21, "ped/med" },	/* ~31   knots */
+    {  5, 11, "veh/sml" },	/*  ~9.5 knots */
+    {  6, 30, "veh/med" },	/* ~11.5 knots */
+    { 10, 76, "veh/big" },	/* ~19.5 knots */
+    {  8, 95, "cargo"   },	/* ~15.5 knots */
+    {  8,125, "tanker"  },	/* ~15.5 knots */
 };
 
-static const ship_object_t ship_objects[] =
+/* The default set of models */
+static ship_models_t default_models[ship_kind_count] = { 0 };
+
+typedef struct
+{
+    ship_kind_t kind;
+    char *name;
+} ship_library_t;
+
+/* default objects */
+static const ship_library_t default_library[] =
 {
     { leisure,	"opensceneryx/objects/vehicles/boats_ships/power.obj" },
     { tourist,	"opensceneryx/objects/vehicles/boats_ships/tour.obj" },
@@ -227,14 +235,16 @@ static void recalc(void)
         while ((active_n < active_max) && candidate_n)
         {
             int obj_n;
+            ship_models_t *models;
             route_t *newroute = route_list_pop(&candidates, rand() % candidate_n--);
             active_n++;
             if (!(a = active_route_add(&active_routes))) { break; }	/* Alloc failure! */
             a->ship=&ships[newroute->ship_kind];
             a->route=newroute;
-            obj_n = rand() % a->ship->obj_n;
-            a->object_ref = a->ship->object_ref[obj_n];
-            a->object_name = a->ship->object_name[obj_n];
+            models = &default_models[newroute->ship_kind];
+            obj_n = rand() % models->obj_n;
+            a->object_ref = models->refs[obj_n];
+            a->object_name = models->names[obj_n];
             a->altmsl=0;
             a->ref_probe=XPLMCreateProbe(xplm_ProbeY);
             a->drawinfo.structSize=sizeof(XPLMDrawInfo_t);
@@ -634,7 +644,7 @@ static void drawdebug(XPLMWindowID inWindowID, void *inRefcon)
 
     while (a!=NULL)
     {
-        sprintf(buf, "%s: %s", shiptokens[a->route->ship_kind], a->route->name);
+        sprintf(buf, "%s: %s", ships[a->route->ship_kind].token, a->route->name);
         XPLMDrawString(color, left + 5, top - 10, buf, 0, xplmFont_Basic);
         width1=XPLMMeasureString(xplmFont_Basic, buf, strlen(buf));
         if (width1>width) { width=width1; }
@@ -713,18 +723,15 @@ static XPLMObjectRef loadobject(const char *path)
 /* Callback from XPLMLookupObjects to load ship objects */
 static void libraryenumerator(const char *inFilePath, void *inRef)
 {
-    ship_t *ship=inRef;
-    if ((ships->obj_n>=OBJ_VARIANT_MAX) || (ships->obj_n<0)) { return; }
+    ship_models_t *models = inRef;
     if (!(strcmp(strrchr(inFilePath, '/'), "/placeholder.obj"))) { return; }	/* OpenSceneryX placeholder */
-    if (!(ship->object_ref[ship->obj_n] = loadobject(inFilePath)) ||
-        !(ship->object_name[ship->obj_n] = strdup(inFilePath)))	/* Not clear if inFilePath is persistant so copy */
-    {
-        ship->obj_n = -1;	/* Fail */
-    }
-    else
-    {
-        ship->obj_n ++;
-    }
+    if (!(models->refs  = realloc(models->refs,  (models->obj_n + 1) * sizeof(XPLMObjectRef))) ||
+        !(models->names = realloc(models->names, (models->obj_n + 1) * sizeof(char*))))
+        return XPLMDebugString("SeaTraffic: Out of memory!");
+
+    models->names[models->obj_n] = (char*) inFilePath;
+    if ((models->refs[models->obj_n] = loadobject(inFilePath)))
+        models->obj_n ++;
 }
 
 
@@ -841,43 +848,39 @@ PLUGIN_API void XPluginReceiveMessage(XPLMPluginID inFrom, long inMessage, void 
     {
         if (!done_init)
         {
-            /* Load ship .objs. Deferred to here so scenery library has been scanned */
+            /* Load default ship .objs. Deferred to here so scenery library has been scanned */
             int i, my_menu_index;
             done_init = 1;
-            for (i=0; i<sizeof(ship_objects)/sizeof(ship_object_t); i++)
+            for (i=0; i<sizeof(default_library)/sizeof(ship_library_t); i++)
             {
-                ship_kind_t ship_kind=ship_objects[i].ship_kind;
-                const char *object=ship_objects[i].object;
-                ship_t *ship=&ships[ship_kind];
-                if (!strchr(object, '/'))
+                ship_kind_t kind = default_library[i].kind;
+                char *name = default_library[i].name;
+                ship_models_t *models = &default_models[kind];
+                if (!strchr(name, '/'))
                 {
                     /* Local resource */
-                    char buffer[PATH_MAX];
-                    strcpy(buffer, relpath);
-                    strcat(buffer, object);
-                    ship->object_ref[ship->obj_n]=loadobject(buffer);
-                    if (ship->object_ref[ship->obj_n]==NULL)
-                    {
-                        ship->obj_n=-1;
-                    }
-                    else
-                    {
-                        ship->object_name[ship->obj_n] = object;
-                        ship->obj_n=ship->obj_n+1;
-                    }
+                    if (!(models->refs  = realloc(models->refs,  (models->obj_n + 1) * sizeof(XPLMObjectRef))) ||
+                        !(models->names = realloc(models->names, (models->obj_n + 1) * sizeof(char*))) ||
+                        !(models->names[models->obj_n] = malloc(strlen(relpath) + strlen(name) + 1)))
+                        return XPLMDebugString("SeaTraffic: Out of memory!");
+
+                    strcpy(models->names[models->obj_n], relpath);
+                    strcat(models->names[models->obj_n], name);
+                    if ((models->refs[models->obj_n] = loadobject(models->names[models->obj_n])))
+                        models->obj_n ++;
                 }
                 else
                 {
                     /* Library resource */
-                    XPLMLookupObjects(object, 0.0f, 0.0f, libraryenumerator, ship);
+                    XPLMLookupObjects(name, 0.0f, 0.0f, libraryenumerator, models);
                 }
-                if (ships[ship_kind].obj_n==0)
+                if (models->obj_n <= 0)
                 {
                     XPLMDebugString("SeaTraffic: Can't find object \"");
-                    XPLMDebugString(object);
+                    XPLMDebugString(name);
                     XPLMDebugString("\"\n");
+                    return;	/* Exit before setting up menus & callbacks */
                 }
-                if (ships[ship_kind].obj_n<=0) { return; }	/* Return before setting up menus & callbacks */
             }
 
             /* Finish setup */

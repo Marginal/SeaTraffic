@@ -83,25 +83,25 @@ enum
 /* Kinds of ships we recognise */
 typedef enum	/* use -fshort-enums with gcc */
 {
-    none=0, leisure, tourist, cruise, ped_sml, ped_med, veh_sml, veh_med, veh_big, cargo, tanker, mil,
+    leisure, tourist, cruise, ped_sml, ped_med, veh_sml, veh_med, veh_big, cargo, tanker,
     ship_kind_count
 } ship_kind_t;
 
-/* Description of a ship */
+/* Description of a kind of ship */
 typedef struct
 {
     unsigned int speed;				/* [m/s] */
     float semilen;				/* [m] */
-    int obj_n;					/* Number of physical .objs */
-    XPLMObjectRef object_ref[OBJ_VARIANT_MAX];	/* Physical .obj handles */
-    const char *object_name[OBJ_VARIANT_MAX];	/* Physical .obj names */
+    char *token;				/* token in routes.txt */
 } ship_t;
 
+/* Models of a kind of ship */
 typedef struct
 {
-    ship_kind_t ship_kind;
-    const char object[64];		/* Virtual .obj name */
-} ship_object_t;
+    int obj_n;					/* Number of physical .objs */
+    char **names;				/* Physical .obj names for sorting */
+    XPLMObjectRef *refs;			/* Physical .obj handles */
+} ship_models_t;
 
 /* Geolocation, used for route paths */
 typedef struct
@@ -143,7 +143,7 @@ typedef struct route_list_t
 typedef struct active_route_t
 {
     struct active_route_t *next;
-    ship_t *ship;		/* Ship description */
+    const ship_t *ship;		/* Ship description */
     route_t *route;		/* The route it's on */
     int direction;		/* Traversing path 1=forwards, -1=reverse */
     int last_node;		/* The last node visited on that route */
@@ -163,7 +163,7 @@ typedef struct active_route_t
 
 
 /* globals */
-const char *shiptokens[ship_kind_count];
+extern const ship_t ships[ship_kind_count];
 
 
 /* prototypes */
