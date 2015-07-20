@@ -68,7 +68,7 @@ static float last_frame=0;		/* last time we recalculated */
 static int done_init=0, need_recalc=1;
 static tile_t current_tile={0,0};
 static int active_n=0;
-static int active_max=2*RENDERING_SCALE;	/* for v9 */
+static int active_max = ACTIVE_DEFAULT;
 static active_route_t *active_routes = NULL;
 static XPLMMenuID my_menu_id;
 static int do_wakes=0;
