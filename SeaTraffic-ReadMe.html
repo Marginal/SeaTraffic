@@ -93,14 +93,45 @@ h5 { font-family: Arial,Helvetica,sans-serif; }
 <p>This plugin doesn&rsquo;t read ferry routes directly from the OpenStreetMap servers (that would be too slow). Instead, it contains a pre-computed database of routes. In order to visualise your new or modified ferry route(s) in X-Plane you can either:</p>
 <ul>
   <li>wait for the <a href="mailto:x-plane@marginal.org.uk">author</a> to release a new version of the plugin, or</li>
-  <li>wait about an hour for your edits to appear on the OpenStreetMap servers, then re-generate the plugin&rsquo;s database by running the script <code>X-Plane/Resources/plugins/SeaTraffic/buildroutes.py</code> <small>(Windows users must install <a href="http://www.python.org/ftp/python/2.7.3/python-2.7.3.msi">Python 2.x</a> in order to run this script)</small>.</li>
+  <li>wait about an hour for your edits to appear on the OpenStreetMap servers, then re-generate the plugin&rsquo;s database by running the script <code>X-Plane/Resources/plugins/SeaTraffic/buildroutes.py</code> <small>(Windows users must install <a target="_blank" href="https://www.python.org/downloads/windows/">Python 2.7</a> in order to run this script)</small>.</li>
 </ul>
+
+<hr>
+
+<h3>Replacing ship models</h3>
+<p>You can use X-Plane&rsquo;s <a target="_blank" href="http://developer.x-plane.com/?article=library-library-txt-file-format-specification">library system</a> to replace the plugin&rsquo;s built-in ship models. <tt>EXPORT</tt> object(s) from your scenery package with the following &lsaquo;virtual path(s)&rsaquo;:</p>
+<dl style="margin-left: 40px;">
+  <dt><tt>marginal/seatraffic/tourist.obj</tt></dt>
+  <dt><tt>marginal/seatraffic/cruise.obj</tt></dt>
+  <dt><tt>marginal/seatraffic/ped/sml.obj</tt></dt>
+  <dt><tt>marginal/seatraffic/ped/med.obj</tt></dt>
+  <dt><tt>marginal/seatraffic/veh/sml.obj</tt></dt>
+  <dt><tt>marginal/seatraffic/veh/med.obj</tt></dt>
+  <dt><tt>marginal/seatraffic/veh/big.obj</tt></dt>
+</dl>
+<p>You <i>must</i> use the <tt>REGION</tt> statement in your <samp>library.txt</samp> file to restrict the use of your ship models to your geographical area of interest. Ships starting their journey within your region will use your model(s), but any ships arriving from outside of your region will still use the default models.</p>
+<p>You must restart X-Plane to see the effect of changes to your <samp>library.txt</samp> file - X-Plane only looks for and reads scenery libraries once at startup.</p>
+<p>Refer to this <a target="_blank" href="http://marginal.org.uk/x-planescenery/tutorials.html#seatraffic">example scenery package</a> for a worked example.</p>
+
+<h4>Troubleshooting</h4>
+<dl>
+  <dt>There is no <samp>SeaTraffic</samp> entry in X-Plane&rsquo;s <samp>Plugins</samp> menu, and I don't see any ships at all:</dt>
+  <dd>Open the file <samp>Log.txt</samp> in the X-Plane folder and search for a message <tt>SeaTraffic: Missing REGION statement for customization of ship &lsaquo;virtual path&rsaquo;</tt>.<br>
+    If you see this message then you haven't correctly used a <tt>REGION</tt> for your ship model(s) in your <samp>library.txt</samp> file.</dd>
+  <dt>&nbsp;</dt>
+  <dt>I see the default ship models instead of my ship models:</dt>
+  <dd>Check that you&rsquo;re overriding the appropriate &lsaquo;virtual path(s)&rsaquo; (listed above) in your <samp>library.txt</samp> file.<br>
+    Check that you&rsquo;re using the <tt>REGION_RECT</tt> statement correctly in your <samp>library.txt</samp> file.</dt>
+  <dt>&nbsp;</dt>
+  <dt>I see ship wakes, but I don't see my ship models:</dt>
+  <dd>Search in <samp>Log.txt</samp> for error messages from the SeaTraffic plugin and/or from X-Plane containing your ship object&rsquo;s filename.</dd>
+</dl>
 
 <hr>
 
 <h3>Acknowledgements</h3>
 <p>&ldquo;X-Plane&rdquo; is a registered trademark of <a href="http://www.x-plane.com/">Laminar Research</a>.</p>
-<p>River vehicle ferry courtesy of Roy Leonard.</p>
+<p>Medium vehicle ferry courtesy of Roy Leonard.</p>
 
 <h3>License</h3>
 <p>This kit is licensed under the GNU <a rel="license" target="_blank" href="http://www.gnu.org/licenses/lgpl-2.1-standalone.html">LGPL v2.1</a> license.<br>

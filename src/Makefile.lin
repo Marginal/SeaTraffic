@@ -17,7 +17,7 @@ INC=-I$(XPSDK)/CHeaders/XPLM -I$(XPSDK)/CHeaders/Widgets
 CFLAGS=-march=core2 -ffast-math -pipe -Wall -Wdouble-promotion -Winline -Wno-missing-braces -static-libgcc -shared -fPIC -fvisibility=hidden -fshort-enums $(BUILD) $(DEFINES) $(INC)
 
 VPATH=
-SRC=routes.c seatraffic.c
+SRC=models.c routes.c seatraffic.c
 LIBS=-lGLU -lGL
 TARGETDIR=../$(PROJECT)
 

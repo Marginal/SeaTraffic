@@ -14,7 +14,7 @@ INC=-F$(XPSDK)/Libraries/Mac -I$(XPSDK)/CHeaders/XPLM -I$(XPSDK)/CHeaders/Widget
 CFLAGS=-arch ppc -arch i586 -arch x86_64 -ffast-math -pipe -Wall -Winline -Wno-missing-braces -bundle -fvisibility=hidden -mmacosx-version-min=10.4 $(BUILD) $(DEFINES) $(INC)
 
 VPATH=
-SRC=routes.c seatraffic.c
+SRC=models.c routes.c seatraffic.c
 LIBS=-framework XPLM -framework XPWidgets -framework OpenGL -framework CoreFoundation
 TARGETDIR=../$(PROJECT)
 

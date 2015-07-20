@@ -24,6 +24,7 @@
 #include <sys/types.h>
 
 #define XPLM200	/* Requires X-Plane 9.0 or later */
+#define XPLM210	/* Uses asynchronous object loading if on v10 */
 #include "XPLMDataAccess.h"
 #include "XPLMDisplay.h"
 #include "XPLMGraphics.h"
@@ -67,6 +68,8 @@
 #define WAKE_MINSPEED 5		/* Only draw wakes for ships going this fast [m/s] */
 #define WAKE_MED 20		/* Draw medium wake for ships this large (semilen) [m] */
 #define WAKE_BIG 40		/* Draw large  wake for ships this large (semilen) [m] */
+#define LIBRARY_PREFIX "marginal/seatraffic/"	/* library names */
+#define LIBRARY_TOKEN_MAX 8 	/* token size */
 
 /* rendering options */
 #define DO_LOCAL_MAP
@@ -92,7 +95,7 @@ typedef struct
 {
     unsigned int speed;				/* [m/s] */
     float semilen;				/* [m] */
-    char *token;				/* token in routes.txt */
+    char token[LIBRARY_TOKEN_MAX];		/* token in routes.txt */
 } ship_t;
 
 /* Models of a kind of ship */
@@ -150,7 +153,7 @@ typedef struct active_route_t
     int new_node;		/* Flag indicating that state needs updating after hitting a new node */
     float last_hdg;		/* The heading we set off from last_node */
     float last_time, next_time;	/* Time we left last_node, expected time to hit the next node */
-    XPLMObjectRef object_ref;	/* X-Plane object */
+    XPLMObjectRef *object_ref;	/* X-Plane object */
     const char *object_name;	/* X-Plane object name for sorting */
     dloc_t loc;			/* Ship's current location */
     double altmsl;		/* Altitude */
@@ -182,3 +185,7 @@ active_route_t *active_route_get_byroute(active_route_t *active_routes, route_t 
 void active_route_pop(active_route_t **active_routes, int n);
 int active_route_length(active_route_t *active_routes);
 void active_route_sort(active_route_t **active_routes, int active_n);
+
+int models_init();
+ship_models_t *models_for_tile(int south, int west);
+XPLMObjectRef loadobject(const char *path);

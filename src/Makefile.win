@@ -12,7 +12,7 @@ DEFINES=-DIBM=1 -DAPL=0 -DLIN=0 -DVERSION=$(VERSION)
 INC=-I$(XPSDK)\CHeaders\XPLM -I$(XPSDK)/CHeaders/Widgets
 CFLAGS=-nologo -fp:fast -LD $(BUILD) $(DEFINES) $(INC)
 
-SRC=routes.c seatraffic.c
+SRC=models.c routes.c seatraffic.c
 TARGETDIR=..\$(PROJECT)
 
 # Work out which target we're set up for by looking for a program (ml64.exe) that only exists in the path for one target

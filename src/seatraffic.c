@@ -36,38 +36,6 @@ const ship_t ships[ship_kind_count] =
     {  8,125, "tanker"  },	/* ~15.5 knots */
 };
 
-/* The default set of models */
-static ship_models_t default_models[ship_kind_count] = { 0 };
-
-typedef struct
-{
-    ship_kind_t kind;
-    char *name;
-} ship_library_t;
-
-/* default objects */
-static const ship_library_t default_library[] =
-{
-    { leisure,	"opensceneryx/objects/vehicles/boats_ships/power.obj" },
-    { tourist,	"opensceneryx/objects/vehicles/boats_ships/tour.obj" },
-    { cruise,	"opensceneryx/objects/vehicles/boats_ships/cruise.obj" },
-    { ped_sml,	"Damen_2006_Green.obj" },
-    { ped_sml,	"Damen_2006_Red.obj" },
-    { ped_sml,	"Damen_2006_Sky.obj" },
-    { ped_sml,	"Damen_2006_White.obj" },
-    { ped_med,	"Damen_4212_Blue.obj" },
-    { ped_med,	"Damen_4212_Green.obj" },
-    { ped_med,	"Damen_4212_Orange.obj" },
-    { ped_med,	"Damen_4212_Sky.obj" },
-    { veh_sml,	"Damen_2010.obj" },
-    { veh_med,	"River_crossing.obj" },
-    { veh_big,	"opensceneryx/objects/vehicles/boats_ships/ferries.obj" },
-    { cargo,	"opensceneryx/objects/vehicles/boats_ships/container.obj" },
-    { tanker,	"Aframax_tanker_Black.obj" },
-    { tanker,	"Aframax_tanker_Blue.obj" },
-    { tanker,	"Aframax_tanker_Grey.obj" },
-    { tanker,	"Aframax_tanker_Sky.obj" },
-};
 
 static XPLMDataRef ref_view_x, ref_view_y, ref_view_z, ref_view_h;
 static XPLMDataRef ref_plane_lat, ref_plane_lon, ref_night, ref_monotonic, ref_renopt=0, ref_rentype;
@@ -241,10 +209,6 @@ static void recalc(void)
             if (!(a = active_route_add(&active_routes))) { break; }	/* Alloc failure! */
             a->ship=&ships[newroute->ship_kind];
             a->route=newroute;
-            models = &default_models[newroute->ship_kind];
-            obj_n = rand() % models->obj_n;
-            a->object_ref = models->refs[obj_n];
-            a->object_name = models->names[obj_n];
             a->altmsl=0;
             a->ref_probe=XPLMCreateProbe(xplm_ProbeY);
             a->drawinfo.structSize=sizeof(XPLMDrawInfo_t);
@@ -306,6 +270,13 @@ static void recalc(void)
                     }
                 }
             }
+
+            /* Choose ship model based on starting node's tile */
+            models = models_for_tile((int) floorf(newroute->path[a->last_node].lat), (int) floorf(newroute->path[a->last_node].lon)) + a->route->ship_kind;
+            obj_n = rand() % models->obj_n;
+            a->object_ref = &models->refs[obj_n];	/* May be NULL until async load completes */
+            a->object_name = models->names[obj_n];
+
             a->new_node=1;		/* Tell drawships() to calculate state */
             a->next_time = a->last_time + distanceto(newroute->path[a->last_node], newroute->path[a->last_node+a->direction]) / a->ship->speed;
         }
@@ -492,15 +463,15 @@ static int drawships(XPLMDrawingPhase inPhase, int inIsBefore, void *inRefcon)
     if (render_pass == 1)		/* reflections */
     {
         for (a=active_routes; a; a=a->next)
-            if (inreflectrange(a->drawinfo.x - view_x, a->drawinfo.z - view_z))
-                XPLMDrawObjects(a->object_ref, 1, &(a->drawinfo), is_night, 1);
+            if (*a->object_ref && inreflectrange(a->drawinfo.x - view_x, a->drawinfo.z - view_z))
+                XPLMDrawObjects(*a->object_ref, 1, &(a->drawinfo), is_night, 1);
         do_wakes = 1;			/* Do wakes on base pass if reflections enabled */
     }
     else				/* shadows or base */
     {
         for (a=active_routes; a; a=a->next)
-            if (indrawrange(a->drawinfo.x - view_x, a->drawinfo.z - view_z))
-                XPLMDrawObjects(a->object_ref, 1, &(a->drawinfo), is_night, 1);
+            if (*a->object_ref && indrawrange(a->drawinfo.x - view_x, a->drawinfo.z - view_z))
+                XPLMDrawObjects(*a->object_ref, 1, &(a->drawinfo), is_night, 1);
 
         /* Wakes. Drawn after drawing the ships, so that the ships' hulls are visible through alpha.
          * Batched together to reduce texture swaps. */
@@ -707,34 +678,6 @@ static int failinit(char *outDescription)
 }
 
 
-static XPLMObjectRef loadobject(const char *path)
-{
-    XPLMObjectRef ref=XPLMLoadObject(path);
-    if (ref==NULL)
-    {
-        XPLMDebugString("SeaTraffic: Can't load object \"");
-        XPLMDebugString(path);
-        XPLMDebugString("\"\n");
-    }
-    return ref;
-}
-
-
-/* Callback from XPLMLookupObjects to load ship objects */
-static void libraryenumerator(const char *inFilePath, void *inRef)
-{
-    ship_models_t *models = inRef;
-    if (!(strcmp(strrchr(inFilePath, '/'), "/placeholder.obj"))) { return; }	/* OpenSceneryX placeholder */
-    if (!(models->refs  = realloc(models->refs,  (models->obj_n + 1) * sizeof(XPLMObjectRef))) ||
-        !(models->names = realloc(models->names, (models->obj_n + 1) * sizeof(char*))))
-        return XPLMDebugString("SeaTraffic: Out of memory!");
-
-    models->names[models->obj_n] = (char*) inFilePath;
-    if ((models->refs[models->obj_n] = loadobject(inFilePath)))
-        models->obj_n ++;
-}
-
-
 /* Convert path to posix style in-place */
 static void posixify(char *path)
 {
@@ -844,69 +787,43 @@ PLUGIN_API void XPluginDisable(void)
 
 PLUGIN_API void XPluginReceiveMessage(XPLMPluginID inFrom, long inMessage, void *inParam)
 {
-    if (inMessage==XPLM_MSG_SCENERY_LOADED)
+    if (!done_init)
     {
-        if (!done_init)
-        {
-            /* Load default ship .objs. Deferred to here so scenery library has been scanned */
-            int i, my_menu_index;
-            done_init = 1;
-            for (i=0; i<sizeof(default_library)/sizeof(ship_library_t); i++)
-            {
-                ship_kind_t kind = default_library[i].kind;
-                char *name = default_library[i].name;
-                ship_models_t *models = &default_models[kind];
-                if (!strchr(name, '/'))
-                {
-                    /* Local resource */
-                    if (!(models->refs  = realloc(models->refs,  (models->obj_n + 1) * sizeof(XPLMObjectRef))) ||
-                        !(models->names = realloc(models->names, (models->obj_n + 1) * sizeof(char*))) ||
-                        !(models->names[models->obj_n] = malloc(strlen(relpath) + strlen(name) + 1)))
-                        return XPLMDebugString("SeaTraffic: Out of memory!");
+        int my_menu_index;
+        done_init = 1;
 
-                    strcpy(models->names[models->obj_n], relpath);
-                    strcat(models->names[models->obj_n], name);
-                    if ((models->refs[models->obj_n] = loadobject(models->names[models->obj_n])))
-                        models->obj_n ++;
-                }
-                else
-                {
-                    /* Library resource */
-                    XPLMLookupObjects(name, 0.0f, 0.0f, libraryenumerator, models);
-                }
-                if (models->obj_n <= 0)
-                {
-                    XPLMDebugString("SeaTraffic: Can't find object \"");
-                    XPLMDebugString(name);
-                    XPLMDebugString("\"\n");
-                    return;	/* Exit before setting up menus & callbacks */
-                }
-            }
+        /* Load default ship .objs. Deferred to here so scenery library has been scanned */
+        if (!models_init(relpath))
+            return;	/* Exit before setting up menus & callbacks */
 
-            /* Finish setup */
-            ref_renopt = XPLMFindDataRef("sim/private/controls/reno/draw_objs_06");	/* v10+ */
-            XPLMEnableFeature("XPLM_WANTS_REFLECTIONS", 1);
-            XPLMRegisterDrawCallback(drawships, xplm_Phase_Objects, 1, NULL);		/* Before other 3D objects */
+        /* Finish setup */
+        ref_renopt = XPLMFindDataRef("sim/private/controls/reno/draw_objs_06");	/* v10+ */
+        XPLMEnableFeature("XPLM_WANTS_REFLECTIONS", 1);
+        XPLMRegisterDrawCallback(drawships, xplm_Phase_Objects, 1, NULL);		/* Before other 3D objects */
 
-            my_menu_index = XPLMAppendMenuItem(XPLMFindPluginsMenu(), "SeaTraffic", NULL, 1);
-            my_menu_id = XPLMCreateMenu("SeaTraffic", XPLMFindPluginsMenu(), my_menu_index, menuhandler, NULL);
-            /* Menu items must be added in order of menu_idx enum */
+        my_menu_index = XPLMAppendMenuItem(XPLMFindPluginsMenu(), "SeaTraffic", NULL, 1);
+        my_menu_id = XPLMCreateMenu("SeaTraffic", XPLMFindPluginsMenu(), my_menu_index, menuhandler, NULL);
+        /* Menu items must be added in order of menu_idx enum */
 #ifdef DO_LOCAL_MAP
-            /* Setup local map */
-            XPLMAppendMenuItem(my_menu_id, "Draw routes in Local Map", (void*) menu_idx_local_map, 0);
-            XPLMCheckMenuItem(my_menu_id, menu_idx_local_map, do_local_map ? xplm_Menu_Checked : xplm_Menu_Unchecked);
-            if (do_local_map)
-            {
-                XPLMRegisterDrawCallback(drawmap3d, xplm_Phase_LocalMap3D, 0, NULL);
-                XPLMRegisterDrawCallback(drawmap2d, xplm_Phase_LocalMap2D, 0, NULL);
-            }
-#endif
-        }
-
-        if (ref_renopt)		/* change to rendering options causes SCENERY_LOADED */
+        /* Setup local map */
+        XPLMAppendMenuItem(my_menu_id, "Draw routes in Local Map", (void*) menu_idx_local_map, 0);
+        XPLMCheckMenuItem(my_menu_id, menu_idx_local_map, do_local_map ? xplm_Menu_Checked : xplm_Menu_Unchecked);
+        if (do_local_map)
         {
-            active_max=XPLMGetDatai(ref_renopt)*RENDERING_SCALE;
-            if (active_max>ACTIVE_MAX) { active_max=ACTIVE_MAX; }
+            XPLMRegisterDrawCallback(drawmap3d, xplm_Phase_LocalMap3D, 0, NULL);
+            XPLMRegisterDrawCallback(drawmap2d, xplm_Phase_LocalMap2D, 0, NULL);
+        }
+#endif
+        need_recalc = 1;
+    }
+
+    if (ref_renopt)		/* change to rendering options causes SCENERY_LOADED */
+    {
+        int new_active_max = XPLMGetDatai(ref_renopt) * RENDERING_SCALE;
+        if (new_active_max > ACTIVE_MAX) { new_active_max = ACTIVE_MAX; }
+        if (active_max != new_active_max)
+        {
+            active_max = new_active_max;
             need_recalc = 1;
         }
     }
