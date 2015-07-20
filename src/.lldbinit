@@ -1,0 +1,2 @@
+target create "~/Desktop/X-Plane 10/X-Plane.app/Contents/MacOS/X-Plane"
+settings set target.run-args -- --no_crash_reporter
