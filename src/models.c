@@ -7,6 +7,10 @@
 
 #include "seatraffic.h"
 
+/* Use asynchronous object loading if on v10 */
+typedef void (* XPLMLoadObjectAsync_f) (const char *inPath, XPLMObjectLoaded_f inCallback, void *inRefcon);
+static XPLMLoadObjectAsync_f myXPLMLoadObjectAsync;
+
 static void libraryloadimmediate(const char *inFilePath, void *inRef);
 static void libraryloadasync(const char *inFilePath, void *inRef);
 
@@ -108,7 +112,7 @@ static void libraryloadasync(const char *inFilePath, void *inRef)
     if (libraryloadcommon(inFilePath, models))
     {
         models->refs[models->obj_n] = NULL;
-        XPLMLoadObjectAsync(inFilePath, libraryloaded, &(models->refs[models->obj_n]));
+        myXPLMLoadObjectAsync(inFilePath, libraryloaded, &(models->refs[models->obj_n]));
         models->obj_n ++;
     }
 }
@@ -185,7 +189,11 @@ int models_init(char *respath)
         return 0;
 
     /* Load custom models asynchronously if possible */
-    libraryloadfn = XPLMFindSymbol("XPLMLoadObjectAsync") ? libraryloadasync : libraryloadimmediate;
+    myXPLMLoadObjectAsync = XPLMFindSymbol("XPLMLoadObjectAsync");
+    libraryloadfn = myXPLMLoadObjectAsync ? libraryloadasync : libraryloadimmediate;
+#ifdef DEBUG
+    XPLMDebugString(myXPLMLoadObjectAsync ? "SeaTraffic: Using Async loading\n" : "SeaTraffic: Using immediate loading\n");
+#endif
 
     for (i=0; i<sizeof(default_library)/sizeof(ship_library_t); i++)
     {
