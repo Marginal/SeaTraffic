@@ -54,6 +54,9 @@ static int do_local_map=0;
 #ifdef DO_ACTIVE_LIST
 static XPLMWindowID windowId = NULL;
 static int drawtime, drawmax;		/* clock time taken in last main loop [us] */
+# if IBM
+static __int64 ticks_per_sec;
+# endif
 #endif
 
 
@@ -437,8 +440,13 @@ static int drawships(XPLMDrawingPhase inPhase, int inIsBefore, void *inRefcon)
     float view_x, view_z;
     int render_pass;
 #ifdef DO_ACTIVE_LIST
+# if IBM
+    __int64 t1, t2;
+    QueryPerformanceCounter((LARGE_INTEGER *) &t1);	/* start */
+# else
     struct timeval t1, t2;
     gettimeofday(&t1, NULL);		/* start */
+# endif
 #endif
 
     assert((inPhase==xplm_Phase_Objects) && inIsBefore);
@@ -494,8 +502,13 @@ static int drawships(XPLMDrawingPhase inPhase, int inIsBefore, void *inRefcon)
     }
 
 #ifdef DO_ACTIVE_LIST
+# if IBM
+    QueryPerformanceCounter((LARGE_INTEGER *) &t2);	/* stop */
+    drawtime += ((t2 - t1) * 1000000) / ticks_per_sec;
+# else
     gettimeofday(&t2, NULL);		/* stop */
     drawtime += (t2.tv_sec-t1.tv_sec) * 1000000 + t2.tv_usec - t1.tv_usec;
+# endif
     if (drawtime>drawmax) { drawmax=drawtime; }
     if (!render_pass) { last_frame = 0; }	/* In DEBUG recalculate while paused for easier debugging / profiling */
 #endif
@@ -766,7 +779,11 @@ PLUGIN_API int XPluginStart(char *outName, char *outSignature, char *outDescript
 
 #ifdef DO_ACTIVE_LIST
     windowId = XPLMCreateWindow(10, 750, 310, 650, 1, drawdebug, NULL, NULL, NULL);	/* size overridden later */
+# if IBM
+    QueryPerformanceFrequency((LARGE_INTEGER *) &ticks_per_sec);
+# endif
 #endif
+
     return 1;
 }
 
