@@ -353,7 +353,7 @@ for way in sortedways:
         ferrytype='cruise'
     elif way.tourist:
         ferrytype='tourist'
-    elif (way.foot and not (way.vehicle or way.hgv or way.car)) or way.vehicle is False:
+    elif way.vehicle is False or (way.foot and not (way.hgv or way.car)) or (way.car is False and not way.hgv):
         if way.length>=LENGTH_PED_MED:
             ferrytype='ped/med'
         else:
